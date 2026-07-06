@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lab 06 — Teaching: Multi-gateway deploys &amp; environment promotion</title>
+<title>Lab 06: Teaching: Multi-gateway deploys &amp; environment promotion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -189,7 +189,7 @@ body{
 .divider .q em{font-style:normal;color:var(--peri2)}
 .divider .sub2{font-size:18px;color:#aebbcd;margin-top:18px;max-width:60ch;line-height:1.5}
 
-/* generic reveal — elements fade/rise in when .show is added */
+/* generic reveal: elements fade/rise in when .show is added */
 .reveal{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
 .reveal.show{opacity:1;transform:none}
 
@@ -222,16 +222,16 @@ body{
     <div class="on-dark brandrow">
       <img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions">
     </div>
-    <div class="stage on-dark">Lab 06 · 09:00 – 10:00</div>
+    <div class="stage on-dark">Lab 06 · 09:00-10:00</div>
   </div>
 
   <div class="cover">
     <div class="eyebrow">Teaching · Day 4 · 60 min</div>
     <div class="big">Multi-gateway deploys &amp; <em>environment promotion</em>.</div>
-    <div class="sub">Day 3 gave you a pipeline that ends at one prod gateway on one machine. Real plants have a test tier, approval gates, multiple lines and sites — and configuration that <em style="color:#fff;font-style:normal">must</em> differ between gateways running "the same" release. Today: one artifact, many gateways, and exactly one place for every difference.</div>
+    <div class="sub">Day 3 gave you a pipeline that ends at one prod gateway on one machine. Real plants have a test tier, approval gates, multiple lines and sites, plus configuration that <em style="color:#fff;font-style:normal">must</em> differ between gateways running "the same" release. Today: one artifact, many gateways, and exactly one place for every difference.</div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 06 — Multi-gateway deployments</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 06: Multi-gateway deployments</span></div>
 </section>
 
 <!-- 2 · WHERE DAY 3 LEFT US -->
@@ -252,7 +252,7 @@ body{
     <div class="split">
       <div>
         <table class="tbl">
-          <tr><th></th><th>Lab 04 — file-based</th><th>Lab 05 — image-based</th></tr>
+          <tr><th></th><th>Lab 04: file-based</th><th>Lab 05: image-based</th></tr>
           <tr><td><b>Artifact</b></td><td>files in git</td><td>a versioned image</td></tr>
           <tr><td><b>Deliver</b></td><td><code>docker cp</code> + hot scan</td><td><code>docker pull</code> + recreate</td></tr>
           <tr><td><b>Stages</b></td><td>local → dev → prod</td><td>local → dev → prod</td></tr>
@@ -263,13 +263,13 @@ body{
         <div class="hd">Two questions Day 3 never answered</div>
         <ul>
           <li><span class="d"></span><b>What earns a build the right to move forward?</b> Lab 05 promoted dev → prod with no stage in between and no one saying "yes".</li>
-          <li><span class="d"></span><b>What is allowed to differ between environments?</b> Dev pointed at <span class="mono">ignition_dev</span>, prod at <span class="mono">ignition_prd</span> — by magic you never touched.</li>
+          <li><span class="d"></span><b>What is allowed to differ between environments?</b> Dev pointed at <span class="mono">ignition_dev</span>, prod at <span class="mono">ignition_prd</span>, by magic you never touched.</li>
         </ul>
       </div>
     </div>
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Today's plan</div>
-      <p><b>Block E:</b> widen the pipe — local → dev → <b>test</b> → prod, with gates. <b>Block F:</b> open the magic box — Ignition 8.3 <b>config scopes</b>, and a framework for every per-environment knob.</p>
+      <p><b>Block E:</b> widen the pipe to local → dev → <b>test</b> → prod, with gates. <b>Block F:</b> open the magic box: Ignition 8.3 <b>config scopes</b>, and a framework for every per-environment knob.</p>
     </div>
   </div>
 
@@ -295,7 +295,7 @@ body{
       <div class="tcard">
         <div class="pn">VERTICAL · TIERS</div>
         <h4>Stages of trust</h4>
-        <p>dev → test → prod. Same artifact, increasing confidence. Test is where acceptance, demos and operator training happen — <b>frozen</b> while dev keeps moving.</p>
+        <p>dev → test → prod. Same artifact, increasing confidence. Test is where acceptance, demos and operator training happen, <b>frozen</b> while dev keeps moving.</p>
         <div class="mini">today's main event</div>
       </div>
       <div class="tcard t2">
@@ -326,7 +326,7 @@ body{
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Vertical = trust · horizontal = copies</span></div>
 </section>
 
-<!-- 4 · DIVIDER — PROMOTION -->
+<!-- 4 · DIVIDER · PROMOTION -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -335,7 +335,7 @@ body{
   <div class="divider">
     <div class="eyebrow">Block E</div>
     <div class="q">How does a release <em>earn</em> its way to prod?</div>
-    <div class="sub2">Not by being rebuilt. The same bytes climb the ladder — dev, test, prod — and something specific must happen at every rung.</div>
+    <div class="sub2">Not by being rebuilt. The same bytes climb the ladder (dev, test, prod) and something specific must happen at every rung.</div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>build once → promote many</span></div>
 </section>
@@ -352,7 +352,7 @@ body{
       <span class="num">03</span>
       <div>
         <div class="title">The promotion pipeline</div>
-        <div class="lead">Four gateways, one image. Watch what moves it — and what <b>never</b> happens after the first build.</div>
+        <div class="lead">Four gateways, one image. Watch what moves it, and what <b>never</b> happens after the first build.</div>
       </div>
     </div>
 
@@ -388,7 +388,7 @@ body{
 
     <div class="callout reveal" data-step="4" style="border-left:5px solid var(--navy)">
       <div class="lab" style="color:var(--blue)">The invariant</div>
-      <p>The image is <b>built exactly once</b> — on the push to <code>develop</code>. Every arrow after that is <code>docker buildx imagetools create</code>: a server-side <b>re-tag</b>. The digest on prod is byte-identical to what dev ran. Rebuild anywhere along the way and you've thrown your testing evidence in the bin.</p>
+      <p>The image is <b>built exactly once</b>, on the push to <code>develop</code>. Every arrow after that is <code>docker buildx imagetools create</code>: a server-side <b>re-tag</b>. The digest on prod is byte-identical to what dev ran. Rebuild anywhere along the way and you've thrown your testing evidence in the bin.</p>
     </div>
   </div>
 
@@ -410,16 +410,16 @@ body{
     <div class="sechead">
       <span class="num">04</span>
       <div>
-        <div class="title">Two ways teams do this — one is a trap</div>
+        <div class="title">Two ways teams do this, and one is a trap</div>
         <div class="lead"><b>Branch-per-environment</b> feels natural in git. It's the most common way multi-environment Ignition projects go wrong.</div>
       </div>
     </div>
     <table class="tbl">
       <tr><th></th><th class="bad">Branch-per-environment</th><th class="goodc">Build-once / promote-many (this lab)</th></tr>
       <tr><td><b>Deploy =</b></td><td>merge <code>dev</code> → <code>test</code> → <code>prod</code> branches</td><td>re-tag one immutable image</td></tr>
-      <tr><td><b>Prod runs</b></td><td>a <b class="bad">fresh build</b> of the prod branch — not the bytes you tested</td><td><b>the exact digest</b> test validated</td></tr>
+      <tr><td><b>Prod runs</b></td><td>a <b class="bad">fresh build</b> of the prod branch, not the bytes you tested</td><td><b>the exact digest</b> test validated</td></tr>
       <tr><td><b>Hotfix</b></td><td>merged to <code>prod</code>… and forgotten on <code>dev</code> → next release <b class="bad">un-fixes prod</b></td><td>one branch (<code>hotfix/*</code>), one build, promoted like anything else</td></tr>
-      <tr><td><b>Env config</b></td><td>leaks into branch diffs — same file, different forever</td><td>lives in <b>scope overlays</b>, identical across the pipeline</td></tr>
+      <tr><td><b>Env config</b></td><td>leaks into branch diffs: same file, different forever</td><td>lives in <b>scope overlays</b>, identical across the pipeline</td></tr>
       <tr><td><b>History answers</b></td><td>"what's on prod?" → archaeology</td><td>git = the product · registry tags = pipeline position</td></tr>
     </table>
     <div class="callout">
@@ -443,7 +443,7 @@ body{
       <span class="num">05</span>
       <div>
         <div class="title">Gates: what stands between stages</div>
-        <div class="lead">Each hop has a different <b>kind</b> of gate — and the prod gate needs <b>zero workflow changes</b>.</div>
+        <div class="lead">Each hop has a different <b>kind</b> of gate, and the prod gate needs <b>zero workflow changes</b>.</div>
       </div>
     </div>
     <div class="split">
@@ -451,7 +451,7 @@ body{
         <table class="tbl">
           <tr><th>Hop</th><th>Gate</th><th>Mechanism</th></tr>
           <tr><td>feature → develop</td><td>review + CI green</td><td>PR + branch protection</td></tr>
-          <tr><td>develop → dev</td><td><b>none</b> — automatic</td><td><code>deploy.yml</code> on push</td></tr>
+          <tr><td>develop → dev</td><td><b>none</b>, automatic</td><td><code>deploy.yml</code> on push</td></tr>
           <tr><td>dev → test</td><td>a human says "freeze"</td><td>pushing <code>release/*</code></td></tr>
           <tr><td>test → prod</td><td>acceptance + <b>approval</b></td><td>tag <code>v*</code> + <b>required reviewers</b></td></tr>
         </table>
@@ -460,20 +460,20 @@ body{
         <ul class="checks">
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Workflows say what happens.</b> Environments say <b>what's allowed to happen, and by whom</b>. Required reviewers on <span class="inlinecode">lab-gateway-prod</span> pause the deploy job until someone clicks approve.</span></li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Gates you'd add in real life:</b> smoke tests against the freshly deployed stage, change-window checks, a digest-equality assertion before prod.</span></li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The release branch is a gate too</b> — a human decision ("this is what we'll test") expressed as a git action, so it's audited like everything else.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The release branch is a gate too</b>: a human decision ("this is what we'll test") expressed as a git action, so it's audited like everything else.</span></li>
         </ul>
       </div>
     </div>
     <div class="callout">
       <div class="lab">In the lab</div>
-      <p>You'll add yourself as a required reviewer on <code>lab-gateway-prod</code>, tag a release, and watch the prod deploy <b>sit and wait for you</b>. Approval is a button — and an audit-log entry.</p>
+      <p>You'll add yourself as a required reviewer on <code>lab-gateway-prod</code>, tag a release, and watch the prod deploy <b>sit and wait for you</b>. Approval is a button, and an audit-log entry.</p>
     </div>
   </div>
 
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Environments gate · workflows execute</span></div>
 </section>
 
-<!-- 8 · DIVIDER — CONFIG -->
+<!-- 8 · DIVIDER · CONFIG -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -481,8 +481,8 @@ body{
   </div>
   <div class="divider">
     <div class="eyebrow">Block F</div>
-    <div class="q">Same bytes everywhere — so what's <em>allowed</em> to differ?</div>
-    <div class="sub2">Dev writes history to <span class="mono" style="color:#dbe4f0">ignition_dev</span>, prod to <span class="mono" style="color:#dbe4f0">ignition_prd</span> — and you never configured that by hand. Time to open the box.</div>
+    <div class="q">Same bytes everywhere, so what's <em>allowed</em> to differ?</div>
+    <div class="sub2">Dev writes history to <span class="mono" style="color:#dbe4f0">ignition_dev</span>, prod to <span class="mono" style="color:#dbe4f0">ignition_prd</span>, and you never configured that by hand. Time to open the box.</div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>configuration options explored</span></div>
 </section>
@@ -499,14 +499,14 @@ body{
       <span class="num">06</span>
       <div>
         <div class="title">What actually differs per environment?</div>
-        <div class="lead">Take an inventory before choosing a mechanism. Most of the gateway is — and must stay — <b>identical</b>.</div>
+        <div class="lead">Take an inventory before choosing a mechanism. Most of the gateway is (and must stay) <b>identical</b>.</div>
       </div>
     </div>
     <div class="cols2">
       <div class="does">
         <div class="hd" style="color:var(--good)">Identical everywhere (or you're not testing prod)</div>
         <ul>
-          <li><span class="d" style="background:var(--good)"></span>Projects — views, scripts, styles, session props</li>
+          <li><span class="d" style="background:var(--good)"></span>Projects: views, scripts, styles, session props</li>
           <li><span class="d" style="background:var(--good)"></span>Tag structures &amp; UDT definitions</li>
           <li><span class="d" style="background:var(--good)"></span>The module set (<span class="mono">modules.json</span>) and module versions</li>
           <li><span class="d" style="background:var(--good)"></span>Historian / tag-provider <i>structure</i></li>
@@ -520,13 +520,13 @@ body{
           <li><span class="d" style="background:var(--warn)"></span>OPC UA endpoints / device addresses (sim vs plant)</li>
           <li><span class="d" style="background:var(--warn)"></span>Gateway name, gateway-network targets</li>
           <li><span class="d" style="background:var(--warn)"></span>Alarm notification targets (test SMTP vs real pagers)</li>
-          <li><span class="d" style="background:var(--warn)"></span>Credentials &amp; API keys — <b>secret</b>, special handling</li>
+          <li><span class="d" style="background:var(--warn)"></span>Credentials &amp; API keys: <b>secret</b>, special handling</li>
         </ul>
       </div>
     </div>
     <div class="callout">
       <div class="lab">The rule</div>
-      <p>If it differs per environment, it must be <b>parameterized and versioned</b> — never hand-edited on the gateway after deploy. A hand-edit is a difference that survives exactly until the next deploy erases it. <b>That</b> is the 2 a.m. incident.</p>
+      <p>If it differs per environment, it must be <b>parameterized and versioned</b>, never hand-edited on the gateway after deploy. A hand-edit is a difference that survives exactly until the next deploy erases it. <b>That</b> is the 2 a.m. incident.</p>
     </div>
   </div>
 
@@ -545,7 +545,7 @@ body{
       <span class="num">07</span>
       <div>
         <div class="title">Ignition 8.3 config scopes</div>
-        <div class="lead">Gateway config lives in <span class="mono">config/resources/&lt;scope&gt;/…</span> — and scopes form an <b>inheritance chain</b>. You've been shipping this structure since Lab 04.</div>
+        <div class="lead">Gateway config lives in <span class="mono">config/resources/&lt;scope&gt;/…</span>, and scopes form an <b>inheritance chain</b>. You've been shipping this structure since Lab 04.</div>
       </div>
     </div>
 
@@ -556,7 +556,7 @@ body{
       <span class="carr">→</span>
       <div class="cnode env"><div class="t">loc</div><div class="s">local gw</div></div>
       <div class="cnode env"><div class="t">dev</div><div class="s">dev gw</div></div>
-      <div class="cnode env"><div class="t">tst</div><div class="s">test gw — <b>you build this</b></div></div>
+      <div class="cnode env"><div class="t">tst</div><div class="s">test gw: <b>you build this</b></div></div>
       <div class="cnode env"><div class="t">prd</div><div class="s">prod gw</div></div>
     </div>
 
@@ -572,8 +572,8 @@ body{
 └── tst/                        <span class="cm"># ← doesn't exist yet!</span></pre></div>
       <ul class="checks">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Each scope declares its <b>parent</b> in <span class="inlinecode">config-mode.json</span>. Resolution walks child-first: <b>env beats core beats external</b>.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The gateway picks its scope at boot: <span class="inlinecode">-Dignition.config.mode=dev</span> — one JVM arg in the compose <span class="inlinecode">command:</span>.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>All scopes ship in the artifact.</b> Dev's image contains prod's overlay and vice versa — selection, not content, differs per gateway.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The gateway picks its scope at boot: <span class="inlinecode">-Dignition.config.mode=dev</span>, one JVM arg in the compose <span class="inlinecode">command:</span>.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>All scopes ship in the artifact.</b> Dev's image contains prod's overlay and vice versa: selection, not content, differs per gateway.</span></li>
         <!-- [VERIFY] resolution semantics: whole-resource replacement vs per-key merge. The lab overlays replace the entire config.json, which is the safe claim. -->
       </ul>
     </div>
@@ -616,13 +616,13 @@ body{
         <h4 style="font-size:16px">…but tst/ doesn't exist</h4>
         <div class="code" style="margin-top:10px"><pre>tst/…/TimescaleDB?   <span class="cm">✗ miss</span>
 core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
-→ <span class="cm">core's URL — the WRONG db</span></pre></div>
+→ <span class="cm">core's URL, the WRONG db</span></pre></div>
       </div>
     </div>
 
     <div class="callout reveal" data-step="4" style="border-left:5px solid var(--warn)">
       <div class="lab">Silent fallback is the sharp edge</div>
-      <p>A missing overlay doesn't error — it <b>inherits</b>. The test gateway will happily boot and write test data into whatever core points at. In the lab, <b>you</b> create <code>tst/</code> and ship it through the pipeline to fix exactly this.</p>
+      <p>A missing overlay doesn't error; it <b>inherits</b>. The test gateway will happily boot and write test data into whatever core points at. In the lab, <b>you</b> create <code>tst/</code> and ship it through the pipeline to fix exactly this.</p>
     </div>
   </div>
 
@@ -645,14 +645,14 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
       <span class="num">09</span>
       <div>
         <div class="title">Every knob goes in one of three buckets</div>
-        <div class="lead">This classification <b>is</b> configuration management. When in doubt, argue about the bucket — not the mechanism.</div>
+        <div class="lead">This classification <b>is</b> configuration management. When in doubt, argue about the bucket, not the mechanism.</div>
       </div>
     </div>
     <div class="buckets">
       <div class="bucket">
         <div class="bh">Bucket 1</div>
         <h4>Same everywhere</h4>
-        <p>Identical in every environment — differences here mean you're not testing what you ship.</p>
+        <p>Identical in every environment; differences here mean you're not testing what you ship.</p>
         <ul>
           <li>historian provider settings</li>
           <li>tag providers, IdP config</li>
@@ -704,7 +704,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
       <span class="num">10</span>
       <div>
         <div class="title">Bake-time · boot-time · run-time</div>
-        <div class="lead">Buckets say <b>where a value lives</b>. Layers say <b>when it takes effect</b> — and what it costs to change.</div>
+        <div class="lead">Buckets say <b>where a value lives</b>. Layers say <b>when it takes effect</b>, and what it costs to change.</div>
       </div>
     </div>
     <table class="tbl">
@@ -725,7 +725,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
         <td><b>Run-time</b></td>
         <td>gateway APIs / scan</td>
         <td>nothing restarts</td>
-        <td>project resources via file-based scan — Lab 04's inner loop</td>
+        <td>project resources via file-based scan, Lab 04's inner loop</td>
       </tr>
     </table>
     <div class="callout" style="border-left:5px solid var(--teal)">
@@ -737,7 +737,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Content is baked · selection is booted</span></div>
 </section>
 
-<!-- 14 · DIVIDER — FLEET -->
+<!-- 14 · DIVIDER · FLEET -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -746,7 +746,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
   <div class="divider">
     <div class="eyebrow">Scaling horizontally</div>
     <div class="q">One release, a <em>fleet</em> of gateways.</div>
-    <div class="sub2">dev → test → prod got the build to production. Now production is four lines across two sites — and they all need the same digest.</div>
+    <div class="sub2">dev → test → prod got the build to production. Now production is four lines across two sites, and they all need the same digest.</div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>matrix deploys · canary · fleet rollback</span></div>
 </section>
@@ -763,7 +763,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
       <span class="num">11</span>
       <div>
         <div class="title">Fan-out with a matrix</div>
-        <div class="lead">GitHub Actions runs the <b>same deploy job once per gateway</b>. Promotion logic doesn't change — only the target list grows.</div>
+        <div class="lead">GitHub Actions runs the <b>same deploy job once per gateway</b>. Promotion logic doesn't change; only the target list grows.</div>
       </div>
     </div>
     <div class="cols2">
@@ -783,12 +783,12 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
       <ul class="checks">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>One matrix entry = one gateway.</b> Add a line to add a site. The artifact, the tag, and the approval gate are untouched.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b><span class="mono">max-parallel: 1</span> is your canary.</b> Order the list least-critical first; a failed healthcheck stops the rollout before it reaches line A.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Per-site runners.</b> In real fleets each site runs its own self-hosted runner with a site label — the matrix routes each deploy to the right building. <!-- [VERIFY] in the lab all targets share one runner --></span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Per-site runners.</b> In real fleets each site runs its own self-hosted runner with a site label, and the matrix routes each deploy to the right building. <!-- [VERIFY] in the lab all targets share one runner --></span></li>
       </ul>
     </div>
     <div class="callout">
       <div class="lab">Where per-site differences go</div>
-      <p>Line B's device IPs are <b>not</b> a different image and <b>not</b> a workflow variable — they're a scope overlay, same as dev vs prod. Horizontal differences use the same bucket framework as vertical ones.</p>
+      <p>Line B's device IPs are <b>not</b> a different image and <b>not</b> a workflow variable; they're a scope overlay, same as dev vs prod. Horizontal differences use the same bucket framework as vertical ones.</p>
     </div>
   </div>
 
@@ -806,19 +806,19 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
     <div class="sechead">
       <span class="num">12</span>
       <div>
-        <div class="title">Fleets fail partially — plan for it</div>
+        <div class="title">Fleets fail partially, so plan for it</div>
         <div class="lead">The steady state <i>during</i> any rollout is a mixed-version fleet. The question isn't how to avoid it, it's how to <b>see it and get out of it</b>.</div>
       </div>
     </div>
     <ul class="checks" style="max-width:960px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Drift must be visible in seconds.</b> "Which version is line B running?" = <span class="inlinecode">docker inspect -f '{{ index .RepoDigests 0 }}'</span> per gateway — or better, a status view that shows every gateway's version. Never archaeology.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Drift must be visible in seconds.</b> "Which version is line B running?" = <span class="inlinecode">docker inspect -f '{{ index .RepoDigests 0 }}'</span> per gateway, or better, a status view that shows every gateway's version. Never archaeology.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Health-gate every hop.</b> Deploy → wait for <span class="inlinecode">/StatusPing</span> → only then take the next gateway. A failed check must <b>halt</b> the rollout, not skip the box.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Rollback = deploy with an older tag.</b> Same workflow, same mechanics, <span class="inlinecode">workflow_dispatch</span> with <span class="inlinecode">v1.0.0</span>. If rollback has <i>different</i> mechanics than deploy, it will fail exactly when you need it most.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Design the app for mixed versions.</b> Alarms, gateway-network calls, shared DB schemas — all briefly span two versions during a rollout. (DB schema migrations: that was Day 3; secrets rotation: this afternoon.)</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Design the app for mixed versions.</b> Alarms, gateway-network calls, shared DB schemas all briefly span two versions during a rollout. (DB schema migrations: that was Day 3; secrets rotation: this afternoon.)</span></li>
     </ul>
     <div class="callout" style="border-left:5px solid var(--navy)">
       <div class="lab" style="color:var(--blue)">Contrast worth naming</div>
-      <p>Ignition's own <b>EAM / gateway network</b> can push projects between gateways too — a pull-from-inside model. It solves delivery, not <b>promotion</b>: no build-once guarantee, no gates, no audit trail in git. Fine for some fleets; know what you're giving up. <!-- [VERIFY] instructor: how deep to go on EAM comparison --></p>
+      <p>Ignition's own <b>EAM / gateway network</b> can push projects between gateways too, a pull-from-inside model. It solves delivery, not <b>promotion</b>: no build-once guarantee, no gates, no audit trail in git. Fine for some fleets; know what you're giving up. <!-- [VERIFY] instructor: how deep to go on EAM comparison --></p>
     </div>
   </div>
 
@@ -858,7 +858,7 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
       </div>
     </div>
     <div class="callout">
-      <div class="lab">Still unsolved — on purpose</div>
+      <div class="lab">Still unsolved, on purpose</div>
       <p>Every password in those overlays is an encrypted blob <b>committed to git</b>. This afternoon (Lab 07) we rip those out and do secrets properly. Hold that itch.</p>
     </div>
   </div>
@@ -875,11 +875,11 @@ core/…/TimescaleDB?  <span class="cmd2">✓ falls back</span>
 
   <div class="body">
     <div class="eyebrow">Now we make it real</div>
-    <div class="title" style="max-width:24ch;color:#fff">In the lab, you run the whole pipeline — and gate it yourself.</div>
+    <div class="title" style="max-width:24ch;color:#fff">In the lab, you run the whole pipeline and gate it yourself.</div>
     <ul class="checks" style="max-width:940px;margin-top:22px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (10:00).</b> Together: bring up the four-gateway stack, ship a change to dev, cut <span class="mono" style="color:#dbe4f0">release/1.0</span>, and watch the promote workflow re-tag — no rebuild — onto the test gateway.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (10:00).</b> Together: bring up the four-gateway stack, ship a change to dev, cut <span class="mono" style="color:#dbe4f0">release/1.0</span>, and watch the promote workflow re-tag (no rebuild) onto the test gateway.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (11:00, breakout rooms).</b> Solo: gate prod with a required reviewer, release <span class="mono" style="color:#dbe4f0">v1.0.0</span> through your own approval, then build the <span class="mono" style="color:#dbe4f0">tst</span> scope overlay and ship it through the pipeline.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The payoff.</b> Three gateways, one digest, per-gateway personalities — all provable from your terminal with <span class="mono" style="color:#dbe4f0">docker inspect</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The payoff.</b> Three gateways, one digest, per-gateway personalities, all provable from your terminal with <span class="mono" style="color:#dbe4f0">docker inspect</span>.</span></li>
     </ul>
   </div>
 
@@ -918,7 +918,7 @@ window.addEventListener('keydown',e=>{
   if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
   if(e.key==='Home'){deck.scrollTo({top:0})}
   if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
-  // Left/Right ONLY step the current slide's animation — they never change slides.
+  // Left/Right ONLY step the current slide's animation; they never change slides.
   if(e.key==='ArrowRight'){e.preventDefault(); if(bound[i])bound[i].go(1);}
   if(e.key==='ArrowLeft'){e.preventDefault(); if(bound[i])bound[i].go(-1);}
 });
@@ -947,10 +947,10 @@ function bindControls(slideEl,ctrl){
   const items=[...slide.querySelectorAll('.reveal')];
   const lead=slide.querySelector('#pipe-step');
   const texts=[
-    'Start: the <b>local</b> gateway — bind mounts, your authoring loop from Lab 04. Nothing deployed yet.',
+    'Start: the <b>local</b> gateway, with bind mounts, your authoring loop from Lab 04. Nothing deployed yet.',
     'A PR merges into <b>develop</b> → the image is <b>built once</b>, tagged <span class="mono">:sha</span> + <span class="mono">:dev</span>, and dev is recreated. Automatic, every merge.',
     'A human decides "freeze" and pushes <b>release/1.0</b> → <span class="mono">:dev</span> is <b>re-tagged</b> to <span class="mono">:test</span> and the test gateway recreated. develop keeps moving; test doesn\'t.',
-    'Tag <b>v1.0.0</b> on main → <span class="mono">:test</span> (not :dev!) is re-tagged to <span class="mono">:v1.0.0</span> + <span class="mono">:prod</span> — but the deploy <b>waits for a required reviewer</b> before recreating prod.',
+    'Tag <b>v1.0.0</b> on main → <span class="mono">:test</span> (not :dev!) is re-tagged to <span class="mono">:v1.0.0</span> + <span class="mono">:prod</span>, but the deploy <b>waits for a required reviewer</b> before recreating prod.',
     'The invariant: <b>one build, three deploys, zero rebuilds</b>. Prod\'s digest ≡ test\'s digest ≡ what dev ran at freeze time.'];
   controllers.pipe={max:4,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
 })();
@@ -962,9 +962,9 @@ function bindControls(slideEl,ctrl){
   const lead=slide.querySelector('#scope-step');
   const texts=[
     'Step through the same lookup on three gateways.',
-    'The <b>dev</b> gateway boots with <span class="mono">mode=dev</span>: the lookup hits <span class="mono">dev/</span> first — found → <b>ignition_dev</b>.',
+    'The <b>dev</b> gateway boots with <span class="mono">mode=dev</span>: the lookup hits <span class="mono">dev/</span> first, found → <b>ignition_dev</b>.',
     'The <b>prod</b> gateway runs the <b>same image</b>, boots <span class="mono">mode=prd</span> → <b>ignition_prd</b>. Same name, different database, zero rebuilds.',
-    'The <b>test</b> gateway boots <span class="mono">mode=tst</span>… but <span class="mono">tst/</span> doesn\'t exist. The lookup <b>silently falls back to core</b> — and lands on the wrong database.',
+    'The <b>test</b> gateway boots <span class="mono">mode=tst</span>… but <span class="mono">tst/</span> doesn\'t exist. The lookup <b>silently falls back to core</b> and lands on the wrong database.',
     'A missing overlay <b>inherits instead of erroring</b>. That silent fallback is exactly the bug you\'ll fix in the lab by building <span class="mono">tst/</span> yourself.'];
   controllers.scope={max:4,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
 })();
