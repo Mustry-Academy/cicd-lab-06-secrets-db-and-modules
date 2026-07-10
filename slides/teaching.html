@@ -252,7 +252,7 @@ body{
   <div class="cover">
     <div class="eyebrow">Teaching · 60 min · Day 4</div>
     <div class="big">Secrets, database migrations, JAR files and <em>third-party modules</em></div>
-    <div class="sub">Four things every real Ignition deployment carries that your pipeline doesn't handle yet: the values that must <em style="color:#fff;font-style:normal">never</em> touch Git, the database schema your screens depend on, and the module and JAR binaries the gateway needs to run. We close all four, with the Wilms and Proferro production repos as our working references.</div>
+    <div class="sub">Four things every real Ignition deployment carries that your pipeline doesn't handle yet: the values that must <em style="color:#fff;font-style:normal">never</em> touch Git, the database schema your screens depend on, and the module and JAR binaries the gateway needs to run. We close all four, with two real production Ignition repos we maintain (one file-based, one image-based) as our working references, shown on screen.</div>
   </div>
 
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 06: Secrets, migrations, modules &amp; JARs</span></div>
@@ -427,7 +427,7 @@ git log -p | grep ak_live
       <div class="rung r3 reveal" data-step="4">
         <div class="rn">3</div>
         <div class="rt">Ignition 8.3 secret providers <span>gateway config <b>references</b> a secret instead of containing it</span></div>
-        <div class="leak"><b class="ok">Config becomes portable</b> across local / dev / prod. Rungs 2 + 3 together are how Wilms runs production. Next slides.</div>
+        <div class="leak"><b class="ok">Config becomes portable</b> across local / dev / prod. Rungs 2 + 3 together are how our production gateways run. Next slides.</div>
       </div>
     </div>
   </div>
@@ -491,8 +491,8 @@ docker inspect lab06-timescaledb \
     <div class="sechead">
       <span class="num">06</span>
       <div>
-        <div class="title">Rung 2, file-based secrets: the best way we know</div>
-        <div class="lead">A secret is a <b>file</b>, not an env var. This one idea works everywhere we deploy: Docker Compose mounts it, Kubernetes mounts it the same way, and Ignition's secret provider can read it directly. It's how Wilms runs production.</div>
+        <div class="title">Rung 2, file-based secrets: a file, not an env var</div>
+        <div class="lead">A secret is a <b>file</b>, not an env var. This one idea works everywhere we deploy: Docker Compose mounts it, Kubernetes mounts it the same way, and Ignition's secret provider can read it directly. It's how our production gateways run.</div>
       </div>
     </div>
     <div class="cols2">
@@ -512,9 +512,8 @@ services:
       <ul class="checks">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Not in <span class="mono">docker inspect</span></b>, not in the process environment: the value only exists as a mounted file the process reads at startup.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Portable across platforms.</b> Compose <span class="mono">secrets:</span>, Kubernetes secret volumes and plain bind mounts all end at the same place: a small read-only file at a known path.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Clean handover to infra.</b> The repo commits the <b>paths and names</b> (plus <span class="mono">*.example</span> dummies); the infra team fills the real files per environment. Wilms even ships committed dummy values for local dev, so a fresh clone just works.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Clean handover to infra.</b> The repo commits the <b>paths and names</b> (plus <span class="mono">*.example</span> dummies); the infra team fills the real files per environment. Our production repo even ships committed dummy values for local dev, so a fresh clone just works.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>And CI can produce these files too:</b> a deploy workflow can write GitHub secrets into password files on the target before <span class="mono">compose up</span>. Same mechanism end to end: slide 09.</span></li>
-        <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Still open:</b> Ignition config itself (DB connections, auth) must point at those files without containing values. That's the next rung.</span></li>
       </ul>
     </div>
   </div>
@@ -564,9 +563,9 @@ services:
       <div class="does">
         <div class="hd" style="color:var(--good)">Referenced secret</div>
         <ul>
-          <li><span class="d" style="background:var(--good)"></span>Config stores a <b>reference</b>: "get <code>MSSQL_PASSWORD</code> from provider <code>WilmsSecrets</code>", never the value.</li>
+          <li><span class="d" style="background:var(--good)"></span>Config stores a <b>reference</b>: "get <code>MSSQL_PASSWORD</code> from provider <code>PlantSecrets</code>", never the value.</li>
           <li><span class="d" style="background:var(--good)"></span>A <b>file-type secret provider</b> resolves it at runtime by reading a file: rungs 2 and 3 snap together at <code>/run/secrets/&lt;name&gt;</code>.</li>
-          <li><span class="d" style="background:var(--good)"></span>This is exactly the Wilms setup: one provider named <code>WilmsSecrets</code>, ~16 named secrets, every DB connection and auth profile pointing at it by name.</li>
+          <li><span class="d" style="background:var(--good)"></span>This is exactly our production setup: one file-type provider, ~16 named secrets, every DB connection and auth profile pointing at it by name.</li>
           <li><span class="d" style="background:var(--good)"></span>Committed config contains <b>no secret material</b>, so it can be diffed, reviewed and deployed anywhere.</li>
         </ul>
       </div>
@@ -598,11 +597,11 @@ services:
 
     <div class="port">
       <div class="filecard">
-        <div class="fh">📄 database-connection config.json, committed (real shape, from the Wilms repo)</div>
+        <div class="fh">📄 database-connection config.json, committed (real shape, from our production repo)</div>
         <pre>"password": {
   "type": <span class="hl">"Referenced"</span>,
   "data": {
-    "providerName": <span class="hl">"WilmsSecrets"</span>,
+    "providerName": <span class="hl">"PlantSecrets"</span>,
     "secretName": <span class="hl">"MSSQL_PASSWORD"</span>   <span class="cm">← a name,
                                     not a value</span>
   }
@@ -675,7 +674,7 @@ jobs:
         run: docker compose up -d</pre></div>
         <div class="callout" style="margin-top:14px">
           <div class="lab">Never</div>
-          <p><code>run: echo ${{ secrets.X }}</code>, and never interpolate a secret straight into a <b>shell command line</b>; pass it through <code>env:</code> and write with <code>printf</code>, so it stays out of the run log. Wilms' boot script does exactly this: <code>umask</code> + <code>chmod 0600</code> <b>before</b> the value is written.</p>
+          <p><code>run: echo ${{ secrets.X }}</code>, and never interpolate a secret straight into a <b>shell command line</b>; pass it through <code>env:</code> and write with <code>printf</code>, so it stays out of the run log. Our production boot script does exactly this: <code>umask</code> + <code>chmod 0600</code> <b>before</b> the value is written.</p>
         </div>
       </div>
     </div>
@@ -706,7 +705,7 @@ jobs:
         <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>PATs &amp; API keys</b>: <span class="mono">ghp_…</span>, runner registration tokens, gateway API keys.</span></li>
         <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Gateway backups (<span class="mono">.gwbk</span>)</b> from real systems. They carry users, DB connections and keystores in one convenient bundle.</span></li>
         <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Keystores / TLS private keys</b>: <span class="mono">ssl.pfx</span>, <span class="mono">metro-keystore</span>, <span class="mono">*.p12</span>.</span></li>
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The one defensible exception: ciphertexts, if you own the keys.</b> 8.3 ships a <b>secrets-management key CLI tool</b> (<span class="mono">ignition-secrets-tool.sh</span>) that manages the gateway's root key and key-encryption keys as JSON files under <span class="mono">data/config/ignition/keys/</span>. Distribute the <b>same keys</b> to your gateways (the way redundant pairs already do) and committed ciphertext decrypts everywhere: an alternative to file-based secrets. The keys themselves become the secret: infra distributes them, and they never, ever go in Git.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The one defensible exception: ciphertexts, if you own the keys.</b> 8.3 ships a <b>secrets-management key CLI tool</b> (<span class="mono">ignition-secrets-tool.sh</span>) that manages the gateway's root key and key-encryption keys as JSON files under <span class="mono">data/config/ignition/keys/</span>. Distribute the <b>same keys</b> to your gateways (the way redundant pairs already do) and committed ciphertext decrypts everywhere: an alternative to file-based secrets. The keys themselves become the secret: infra distributes them, and they never, ever go in Git. Docs: <a href="https://www.docs.inductiveautomation.com/docs/8.3/platform/security/secrets-management/secrets-management-key-cli-tool" target="_blank" rel="noopener" style="color:var(--blue-d);font-weight:600">Secrets Management Key CLI Tool</a>.</span></li>
       </ul>
       <div>
         <div class="callout" style="margin-top:0">
@@ -736,7 +735,7 @@ gitleaks detect --source . <span class="cm"># zero findings = green</span></pre>
   </div>
   <div class="divider">
     <div class="eyebrow">Part 2 · Deploying the database with your code</div>
-    <div class="q">Your screens are versioned. <em>Their schema isn't.</em></div>
+    <div class="q">Your screens are versioned. <em>Your database schema isn't.</em></div>
     <div class="sub2">A Perspective view that queries a table is only half an artifact. The other half lives in a Docker volume that no pipeline touches, yet.</div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>drift → db-init's limit → migrations → the pipeline</span></div>
@@ -838,7 +837,7 @@ CREATE DATABASE ignition_prd;</pre></div>
       <span class="num">13</span>
       <div>
         <div class="title">Migrations: numbered SQL files, applied in order, tracked in the database</div>
-        <div class="lead">We use <b>golang-migrate</b>, the same tool as the Proferro production repo. Files come in <b>pairs</b> (<span class="mono">.up.sql</span> / <span class="mono">.down.sql</span>), numbered; <span class="mono">migrate up</span> applies the ones a database hasn't seen yet, in order, and records where it got to.</div>
+        <div class="lead">We use <b>golang-migrate</b>, the same tool our file-based production repo uses. Files come in <b>pairs</b> (<span class="mono">.up.sql</span> / <span class="mono">.down.sql</span>), numbered; <span class="mono">migrate up</span> applies the ones a database hasn't seen yet, in order, and records where it got to.</div>
       </div>
     </div>
 
@@ -875,7 +874,7 @@ CREATE TABLE recipe_params (…);</pre>
     </div>
 
     <div class="callout reveal" data-step="5" style="border-left:5px solid var(--navy)">
-      <div class="lab" style="color:var(--blue)">The rules that make this work (straight from Proferro's docs/MIGRATIONS.md)</div>
+      <div class="lab" style="color:var(--blue)">The rules that make this work (straight from the production repo's docs/MIGRATIONS.md)</div>
       <p><b>Migrations always come in pairs</b> (<code>up</code> applies, <code>down</code> undoes) · <b>never edit a migration after it has deployed anywhere</b>: fix mistakes with a new numbered migration · the tool tracks each database's position in <code>schema_migrations</code>, so every environment catches up at its own pace. It's the Git mental model, applied to your schema.</p>
     </div>
   </div>
@@ -924,7 +923,7 @@ CREATE TABLE recipe_params (…);</pre>
       </div>
       <div class="callout" style="margin-top:0">
         <div class="lab">On failure</div>
-        <p>The migrate step failing <b>fails the whole run</b>: no screens ship. Fix forward with a new migration and redeploy. Worth knowing: the Proferro pipeline runs migrations <b>after</b> the scan, with <span class="mono">continueOnError</span>. Look at it in the we-do and spot what can go wrong with that ordering.</p>
+        <p>The migrate step failing <b>fails the whole run</b>: no screens ship. Fix forward with a new migration and redeploy. Worth knowing: our file-based production pipeline runs migrations <b>after</b> the scan, with <span class="mono">continueOnError</span>. Look at it in the we-do and spot what can go wrong with that ordering.</p>
       </div>
     </div>
   </div>
@@ -964,11 +963,11 @@ CREATE TABLE recipe_params (…);</pre>
 
     <div class="cols2">
       <div class="does">
-        <div class="hd">The pattern (Proferro and Wilms, identically)</div>
+        <div class="hd">The pattern (both production repos, identically)</div>
         <ul>
-          <li><span class="d"></span><span><b>Commit the binaries.</b> <code>third-party-modules/</code> holds the <span class="mono">.modl</span> files (MQTT Engine, Embr Charts, TimescaleDB Historian…), split per gateway where needs differ (Proferro: <code>it/</code> vs <code>ot/</code>).</span></li>
+          <li><span class="d"></span><span><b>Commit the binaries.</b> <code>third-party-modules/</code> holds the <span class="mono">.modl</span> files (MQTT Engine, Embr Charts, TimescaleDB Historian…), split per gateway where needs differ (e.g. <code>it/</code> vs <code>ot/</code>).</span></li>
           <li><span class="d"></span><span><b>Point the gateway at the folder.</b> The 8.3 flag <span class="mono">-Dignition.gateway.externalModulesFolder=/external-modules</span> loads them at boot: no UI install, ever.</span></li>
-          <li><span class="d"></span><span><b>Ship them like everything else.</b> File-based: the pipeline copies the folder to the gateway host. Image-based: one <span class="mono">COPY</span> layer, like you saw in the Wilms Dockerfile yesterday.</span></li>
+          <li><span class="d"></span><span><b>Ship them like everything else.</b> File-based: the pipeline copies the folder to the gateway host. Image-based: one <span class="mono">COPY</span> layer, like you saw in the production Dockerfile yesterday.</span></li>
         </ul>
       </div>
       <div>
@@ -993,7 +992,7 @@ ACCEPT_MODULE_CERTS: <span class="cmd2">"…"</span>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>References: proferro third-party-modules/ · wilms modules/ignition/</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Shown on screen: the production repos' third-party-modules folders</span></div>
 </section>
 
 <!-- 21b · JAR FILES -->
@@ -1017,14 +1016,14 @@ ACCEPT_MODULE_CERTS: <span class="cmd2">"…"</span>
         <div class="hd">Kind 1 · JDBC drivers: part of the 8.3 config tree</div>
         <ul>
           <li><span class="d"></span><span>In 8.3 a database driver is a <b>config resource</b>: the JAR sits <i>inside</i> the resource folder, next to its <span class="mono">config.json</span>.</span></li>
-          <li><span class="d"></span><span>Proferro, committed and deployed: <code>config/resources/core/ignition/database-driver/PostgreSQL/postgresql-42.7.2.jar</code>, with <span class="mono">resource.json</span> listing the JAR in its <span class="mono">"files"</span>.</span></li>
+          <li><span class="d"></span><span>Committed and deployed in production: <code>config/resources/core/ignition/database-driver/PostgreSQL/postgresql-42.7.2.jar</code>, with <span class="mono">resource.json</span> listing the JAR in its <span class="mono">"files"</span>.</span></li>
           <li><span class="d"></span><span><b>It ships with the ordinary config copy.</b> No special handling: deploy the config tree, and the driver arrives with it.</span></li>
         </ul>
       </div>
       <div class="does">
         <div class="hd">Kind 2 · library JARs: on the gateway classpath</div>
         <ul>
-          <li><span class="d"></span><span>Java libraries your gateway scripts call. Wilms ships <code>amqp-client</code> (RabbitMQ) and an SMB client, with their <b>pinned dependency JARs</b> alongside.</span></li>
+          <li><span class="d"></span><span>Java libraries your gateway scripts call. Our image-based production repo ships <code>amqp-client</code> (RabbitMQ) and an SMB client, with their <b>pinned dependency JARs</b> alongside.</span></li>
           <li><span class="d"></span><span>They live in <code>modules/jar/</code> in the repo, with a README that records <b>where each JAR came from</b> (the Maven Central command), and get copied to <code>lib/core/gateway/</code>.</span></li>
           <li><span class="d"></span><span><b>Pin the versions, commit the binaries.</b> The gateway has no package manager: your repo is the lockfile.</span></li>
         </ul>
@@ -1037,7 +1036,7 @@ ACCEPT_MODULE_CERTS: <span class="cmd2">"…"</span>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>References: proferro database-driver resources · wilms modules/jar/</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Shown on screen: database-driver resources · a modules/jar/ folder</span></div>
 </section>
 
 <!-- 22 · IN THE LAB (closing) -->
@@ -1051,8 +1050,8 @@ ACCEPT_MODULE_CERTS: <span class="cmd2">"…"</span>
     <div class="eyebrow">Now we make it real</div>
     <div class="title" style="max-width:28ch;color:#fff">Next: move a secret up the ladder, ship a schema change, and deploy a module</div>
     <ul class="checks" style="max-width:940px;margin-top:22px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> The leak-is-forever demo live in a scratch repo · one credential climbing the ladder: <span class="mono">.env</span> → secret file → referenced secret in the gateway · a migration written as an up/down pair and applied with <span class="mono">migrate up</span> · a walk through the Proferro pipeline to see all of it (and one flaw) in production.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (breakout rooms).</b> Two warm-ups (secret triage, leak &amp; rotate drill), then Part 1: the secrets ladder on your own stack, with the deploy workflow writing the secret files · Part 2: write migration <span class="mono">0002</span> and watch the pipeline migrate dev before it ships your screen · Part 3: add a third-party module and a JDBC driver, and prove a fresh gateway boots complete.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> The leak-is-forever demo live in a scratch repo · one credential climbing the ladder: <span class="mono">.env</span> → secret file → referenced secret in the gateway · a migration written as an up/down pair and applied with <span class="mono">migrate up</span> · a walk through a real production pipeline to see all of it (and one flaw) live.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (breakout rooms).</b> One warm-up together (deploy to develop and prod, and find both db-connections Faulted), then Part 1: hook up a secret for the db-connection: secret files, a file-based provider, referenced secrets, and a full feature-branch → PR → pipeline deploy that fixes develop · Part 2: write migration <span class="mono">0002</span> and watch the pipeline migrate dev before it ships your screen · Part 3: add a third-party module and prove a fresh gateway boots complete.</span></li>
     </ul>
   </div>
 
@@ -1073,6 +1072,7 @@ const bar=document.getElementById('bar');
 const pager=document.getElementById('pager');
 const hint=document.getElementById('hint');
 function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
 function curIndex(){return Math.round(deck.scrollTop/window.innerHeight)}
 function update(){
   const i=curIndex();
@@ -1081,7 +1081,18 @@ function update(){
   const dark=slides[i]&&slides[i].classList.contains('dark');
   pager.classList.toggle('on-dark',dark);
   hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
 }
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
 deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
 window.addEventListener('keydown',e=>{
   if(e.target.tagName==='BUTTON')return;
@@ -1139,7 +1150,7 @@ controllers.ladder=revealCtrl(5,'#ladder-step',[
   '<b>Rung 0, hardcoded.</b> In the repo, in history, in every fork. The rung you never stand on.',
   '<b>Rung 1, <span class="mono">.env</span> + interpolation.</b> Out of Git, but still visible to <span class="mono">docker inspect</span> and the process env. This is where the labs have lived so far.',
   '<b>Rung 2, file-based secrets.</b> A file at <span class="mono">/run/secrets/…</span>, not an env var. Invisible to inspect, filled per environment by the infra side, and it works the same in Compose and Kubernetes.',
-  '<b>Rung 3, Ignition 8.3 secret providers.</b> Gateway config stores a <b>reference</b> that a provider resolves from those files. Rungs 2 + 3 snapped together are the production pattern: it\'s how Wilms runs today.'
+  '<b>Rung 3, Ignition 8.3 secret providers.</b> Gateway config stores a <b>reference</b> that a provider resolves from those files. Rungs 2 + 3 snapped together are the production pattern: it\'s how our production gateways run today.'
 ]);
 
 /* ---------- slide 17 (idx 16): migration ledger ---------- */

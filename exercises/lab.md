@@ -2,7 +2,8 @@
 
 **Day 4 · morning session.** Four things every real Ignition deployment carries
 that the pipeline doesn't handle yet: secrets, the database schema, third-party
-modules and JAR files. The Wilms and Proferro production repos are the working
+modules and JAR files. Two real production Ignition repos we maintain (one
+file-based, one image-based; shown on screen by the instructor) are the working
 references throughout.
 
 **Duration:** ~3 hours
@@ -23,10 +24,10 @@ You should leave this lab able to:
 - Sort configuration into **public / per-environment / secret**, and say where each kind lives
 - Explain why a secret that has ever been pushed is **burned** — the fix is *rotate*, not *delete*
 - Climb the secrets ladder: `.env` + Compose interpolation → **file-based secrets** (`/run/secrets/`) → Ignition 8.3 secret providers (embedded vs **referenced**)
-- Wire the whole path: **GitHub secret → secret file written by the deploy workflow → file-type secret provider → referenced secret in gateway config** (the Wilms production pattern)
+- Wire the whole path: **GitHub secret → secret file written by the deploy workflow → file-type secret provider → referenced secret in gateway config** (the production pattern)
 - Name the alternative: committed **ciphertexts with shared encryption keys**, managed with the 8.3 secrets-management key CLI tool (`ignition-secrets-tool.sh`)
 - Explain why `db-init/` is bootstrap, not deployment
-- Write a schema change as a **golang-migrate up/down pair** (`0002_name.up.sql` / `.down.sql`, like the Proferro repo), apply it with `migrate up`, and read the `schema_migrations` ledger
+- Write a schema change as a **golang-migrate up/down pair** (`0002_name.up.sql` / `.down.sql`, like our file-based production repo), apply it with `migrate up`, and read the `schema_migrations` ledger
 - Wire a migrate step into `deploy.yml` **before** the ship step, and say why the order matters
 - Deploy a **third-party module**: committed `.modl`, external-modules folder flag, headless license/cert acceptance in `modules.json`
 - Say where the two kinds of **JAR** live: JDBC drivers as 8.3 config resources (inside the config tree), library JARs on the gateway classpath
@@ -39,8 +40,9 @@ scripts/setup.sh          # idempotent — safe if the stack is already up
 scripts/validate.sh       # green before you start
 ```
 
-Parts 1C and 2B need your fork with Actions enabled (same setup as Lab 04): the
-pipeline is what writes the secret files and runs the migrations.
+The warm-up, Parts 1C–1D and 2B need your fork with Actions enabled (same setup
+as Lab 04): the pipeline is what deploys, writes the secret files and runs the
+migrations.
 
 ---
 
@@ -52,52 +54,79 @@ pipeline is what writes the secret files and runs the migrations.
 2. `git log -p` / GitHub UI: the key is still perfectly readable in history.
 3. The real-world response: **rotate the credential**, then (optionally) scrub history — and why scrubbing alone is never enough on a shared remote.
 
-### Demo 2 — the secrets ladder, on the Wilms repo
+### Demo 2 — the secrets ladder, on the image-based production repo (on screen)
 
 1. The `.env` → Compose interpolation rung and where it leaks: `docker inspect`, `docker compose config`, process env.
-2. The Wilms setup live: `secrets/` with committed dummy values for local dev, the `WilmsSecrets` file-type provider, a DB connection whose password is `{"type": "Referenced", "data": {"providerName": "WilmsSecrets", "secretName": "MSSQL_PASSWORD"}}`, and the `${ENV:NAME}` placeholders in the core collection that the boot script renders to files (umask + chmod **before** the value lands).
-3. The infra handoff: `docs/infra-env-vars-rabbitmq-seq.md` — the table of env vars the infra team fills per environment.
+2. The production setup live: `secrets/` with committed dummy values for local dev, a file-type secret provider, a DB connection whose password is `{"type": "Referenced", "data": {"providerName": "PlantSecrets", "secretName": "MSSQL_PASSWORD"}}`, and the `${ENV:NAME}` placeholders in the core collection that the boot script renders to files (umask + chmod **before** the value lands).
+3. The infra handoff doc: the table of env vars the infra team fills per environment.
 
-### Demo 3 — migrations, live on the Proferro repo
+### Demo 3 — migrations, live on the file-based production repo (on screen)
 
 1. `db-init/` recap: rename the volume → SQL runs; existing volume → it doesn't. Bootstrap, not deployment.
 2. The `db-migration/migrate/` folder: 4-digit paired files (`0001_….up.sql`/`.down.sql`), `docs/MIGRATIONS.md` rules ("always pairs", "never edit deployed migrations"), `migrate.sh` running golang-migrate in Docker, the `schema_migrations` table.
-3. The pipeline steps in `.azure/pipelines.yml` — and the two flaws worth spotting together: migrations run **after** the scan, with `continueOnError: true`. What can go wrong?
+3. The pipeline steps — and the two flaws worth spotting together: migrations run **after** the scan, with `continueOnError: true`. What can go wrong?
 
 ### Demo 4 — modules and JARs, in both repos
 
-1. Proferro `third-party-modules/it|ot/` and the copy step to the gateway host; Wilms `modules/ignition/` as a COPY layer.
+1. The file-based repo's `third-party-modules/it|ot/` and the copy step to the gateway host; the image-based repo's `modules/ignition/` as a COPY layer.
 2. Headless acceptance: `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS` env vars, and `modules.json` entries with `certFingerprint` + `licenseAgreementHash`.
-3. The JDBC driver JAR living **inside** the 8.3 config tree (`database-driver/PostgreSQL/postgresql-42.7.2.jar` next to its `config.json`), vs Wilms' library JARs (`modules/jar/` → `lib/core/gateway/`) with pinned dependencies and a README recording where each JAR came from.
+3. The JDBC driver JAR living **inside** the 8.3 config tree (`database-driver/PostgreSQL/postgresql-42.7.2.jar` next to its `config.json`), vs library JARs (`modules/jar/` → `lib/core/gateway/`) with pinned dependencies and a README recording where each JAR came from.
 
 ## You do (breakout rooms)
 
 Follows [`slides/assignment.html`](../slides/assignment.html) 1:1.
 
-### Warm-up 1 — secret triage
-Grep your clone for candidate secrets; sort into public / per-environment / secret in `NOTES.local.md`; check `.gitignore` covers `.env` and `secrets/`; run the secret scan in `scripts/validate.sh` for a zero-findings baseline. <!-- TODO(infra): gitleaks step in validate.sh -->
+### Warm-up (together) — deploy to develop and prod, and check the db-connections
+Pre-flight first (`validate.sh` green). Then trigger `deploy.yml` for develop and
+for prod from the Actions tab and watch both runs go green. Now open the develop
+gateway, Config → Databases → Connections: both connections (`TimescaleDB` and
+`TimescaleDB_Reports`) are **Faulted**; prod shows the same. Write the diagnosis
+question in `NOTES.local.md`: the pipeline is green and the gateway is broken —
+what can a config-only deploy never carry? (Answer lands in Part 1: the password
+values and the per-environment database target.)
+<!-- TODO(infra): seed the repo so both connections fault on dev/prod out of the
+     box: TimescaleDB_Reports exists only in core (points at ignition_loc), and
+     no secret files exist on the dev/prod hosts. gitleaks step in validate.sh. -->
 
-### Warm-up 2 — leak & rotate drill
-Repeat Demo 1 yourself on a scratch branch; convince yourself the "deleted" secret is still in history; write the two-line incident response (rotate → then scrub) in `NOTES.local.md`; delete the branch, never push it.
-
-### Part 1 — move one credential up the secrets ladder (±20 min)
-- **1A.** Postgres password: compose `environment:` → a secret file mounted at `/run/secrets/postgres_password` (`POSTGRES_PASSWORD_FILE`). Keep the same value — Postgres only sets it on first volume init.
-- **1B.** Create a **file-type secret provider** on the local gateway; re-point the DB connection at the **referenced** secret; grep the exported config to prove no value leaked.
-- **1C.** Add `POSTGRES_PASSWORD` as a GitHub environment secret and add the **Materialize secret files** step to `deploy.yml` (umask 177 + `printf`, before `compose up`).
-- **Gate:** `scripts/validate.sh` green, secret scan zero findings, and you can narrate: GitHub secret → file → provider → reference.
+### Part 1 — hook up a secret for the db-connection (±30 min)
+Two db-connections, same database server, different users: `TimescaleDB` logs in
+as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
+- **1A.** Both passwords become secret files: compose `environment:` → files
+  mounted at `/run/secrets/postgres_password` and `/run/secrets/reporting_password`
+  (`POSTGRES_PASSWORD_FILE` on the DB service; both secrets also attached to the
+  gateway service). Keep the same values — Postgres only sets them on first
+  volume init.
+- **1B.** Create a **file-type secret provider** (`LabSecrets`) on the local
+  gateway with secrets `POSTGRES_PASSWORD` and `REPORTING_PASSWORD`; re-point
+  **both** connections at their **referenced** secret; grep the exported config
+  to prove no value leaked.
+- **1C.** Build the fix for develop, in two halves: add the **dev
+  deployment-mode override** for `TimescaleDB_Reports`
+  (`…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json`,
+  connectURL → `ignition_dev`, copy the pattern from `TimescaleDB`), and add
+  `POSTGRES_PASSWORD` + `REPORTING_PASSWORD` as secrets on the `lab-gateway-dev`
+  environment plus the **Materialize secret files** step in `deploy.yml`
+  (umask 177 + `printf`, before `compose up`). Nothing is deployed yet.
+- **1D.** The full deploy moment, every station separately: **branch**
+  (`feature/fix-dev-db-connections`) → **commit & push** (no secret values in
+  the diff) → **open the PR** → **watch the PR validate** (`ci.yml` green) →
+  **merge** → **watch the pipeline deploy** (materialize secrets → up → scan →
+  verify) → **verify develop** (both connections Valid, `TimescaleDB_Reports`
+  on `ignition_dev`).
+- **Gate:** both connections Valid on develop, fixed by the pipeline and not by
+  hand, and you can narrate: GitHub secret → file → provider → reference.
 
 ### Part 2 — ship a schema change as a migration (±20 min)
-- **2A.** Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and** `.down.sql`; apply with `scripts/migrate.sh up`; read `schema_migrations` (version 2, not dirty); re-run to see idempotency. Note: golang-migrate will NOT stop you editing an applied migration — that discipline is a written rule (Proferro `docs/MIGRATIONS.md`), not a tool feature.
+- **2A.** Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and** `.down.sql`; apply with `scripts/migrate.sh up`; read `schema_migrations` (version 2, not dirty); re-run to see idempotency. Note: golang-migrate will NOT stop you editing an applied migration — that discipline is a written rule (the production repo's `docs/MIGRATIONS.md`), not a tool feature.
 - **2B.** Add the migrate step to `deploy.yml` **before** the ship step (and not `continueOnError`); PR with the migration **and** the screen that reads the new table together; watch the run migrate dev before shipping; prove it in dev's `schema_migrations`.
 - **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and dev's ledger at version 2.
 
-### Part 3 — deploy a module and a JDBC driver (±20 min)
-- **3A.** Enable a spare `.modl` from `third-party-modules/` in `services/modules.json` with `certFingerprint` + `licenseAgreementHash` (values in this file); ship through the pipeline; verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the acceptance hash, redeploy, observe, restore. <!-- TODO(infra): pick the spare module and record its fingerprint + hash here -->
-- **3B.** `find services/config -name "*.jar"` — find the JDBC driver inside the config tree, read its `resource.json`, and write down how it reaches the gateway (the ordinary config ship step). Contrast with Wilms' classpath JARs.
+### Part 3 — deploy a third-party module (±10 min)
+- Enable a spare `.modl` from `third-party-modules/` in `services/modules.json` with `certFingerprint` + `licenseAgreementHash` (values in this file); ship through the pipeline; verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the acceptance hash, redeploy, observe, restore. <!-- TODO(infra): pick the spare module and record its fingerprint + hash here -->
 - **Gate:** module Running on dev, hands-free.
 
 ### Stretch (optional)
-- **S1.** Committed ciphertexts done safely: `ignition-secrets-tool.sh` root key + KEK under `data/config/ignition/keys/`; share the keys between two gateways; check a ciphertext created on one decrypts on the other. What is "the secret" now, and who owns it?
+- **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and develop faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?
 - **S2.** Expand-contract rename: `0003` add + backfill, screen switch, `0004` drop.
 - **S3.** Add a `gitleaks` job to `ci.yml` (`fetch-depth: 0` — the scanner must see history); test with a fake-key PR.
 
@@ -105,4 +134,4 @@ Repeat Demo 1 yourself on a scratch branch; convince yourself the "deleted" secr
 
 - One surprise, one question, per room.
 - Which secrets approach fits your plant: references + files, or ciphertexts + shared keys? What does each make easy, and what does each make dangerous?
-- The Proferro ordering question: migrations after the scan, `continueOnError: true` — what incident does that setup eventually produce?
+- The production ordering question from Demo 3: migrations after the scan, `continueOnError: true` — what incident does that setup eventually produce?

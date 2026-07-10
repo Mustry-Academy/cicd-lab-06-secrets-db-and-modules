@@ -172,7 +172,7 @@ body{
   <div class="cover">
     <div class="eyebrow">The assignment · breakout rooms · ±60 min</div>
     <div class="big">Move the secrets out of Git, ship a schema migration, and deploy a <em>module</em></div>
-    <div class="sub">Three parts, mirroring the three parts of the teaching. Part 1: one credential climbs the secrets ladder, ending as a referenced secret the deploy workflow materializes as a file. Part 2: a schema change ships as a golang-migrate up/down pair that the pipeline applies before the screens land. Part 3: a third-party module and a JDBC driver ride the same pipeline, and a fresh gateway boots complete.</div>
+    <div class="sub">One warm-up together, then three parts solo. Warm-up: deploy to develop and prod, and find the broken database connections. Part 1: hook up a secret for the db-connection: two connections get file-based secrets, and a feature-branch PR ships the fix that makes develop Valid. Part 2: a schema change ships as a golang-migrate up/down pair that the pipeline applies before the screens land. Part 3: a third-party module rides the same pipeline, and a fresh gateway boots complete.</div>
     <div class="for">
       <span>Floating to help</span>
       <span class="pill"><b>Sam</b></span>
@@ -196,8 +196,8 @@ body{
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Share your screen</b> in your breakout room, and we'll drop in where it's useful.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The exercise file is the source of truth:</b> <span class="inlinecode">exercises/lab.md</span>. These slides are the map, not the territory.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Pre-flight:</b> <span class="inlinecode">cp .env.example .env</span> → <span class="inlinecode">scripts/setup.sh</span> → <span class="inlinecode">scripts/validate.sh</span> green before you start.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Parts 1C and 2B need your fork with Actions enabled</b> (same setup as Lab 04): the pipeline is what writes the secret files and runs the migrations.</span></li>
-      <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Never commit a real secret today.</b> The only key you'll ever commit is the obviously fake one in Warm-up 2, on a scratch branch you delete.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The warm-up, Parts 1C-1D and 2B need your fork with Actions enabled</b> (same setup as Lab 04): the pipeline is what deploys, writes the secret files and runs the migrations.</span></li>
+      <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Never commit a real secret today.</b> If <span class="inlinecode">git status</span> ever lists a file under <span class="inlinecode">secrets/</span> that isn't a <span class="inlinecode">*.example</span>, stop and fix your <span class="inlinecode">.gitignore</span> first.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stuck?</b> <span class="inlinecode">docs/TROUBLESHOOTING.md</span> first, then say so in the room.</span></li>
     </ul>
     <div class="goal good-g">
@@ -205,7 +205,7 @@ body{
       <p>Stuck for more than a couple of minutes? <b>Say so in the room.</b> Don't sit blocked in silence; that's exactly what we're here for.</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-ups → Part 1 → Part 2 → Part 3</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up → Part 1 → Part 2 → Part 3</span></div>
 </section>
 
 <!-- 3 · THE PLAN -->
@@ -215,13 +215,13 @@ body{
     <div class="stage">The assignment · the plan</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">Two warm-ups together, then three parts solo</div><div class="lead">The warm-ups (secret triage + the leak drill) we do together at the top of the hour. Then each part matches a part of the teaching.</div></div></div>
+    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">One warm-up together, then three parts solo</div><div class="lead">The warm-up (a full deploy to develop and prod, and what it doesn't fix) we do together at the top of the hour. Then each part matches a part of the teaching.</div></div></div>
     <div class="pmap">
       <div class="pcard p1">
-        <div class="pn">PART 1 · SOLO · ±20 MIN</div>
-        <h4>Move one credential up the secrets ladder</h4>
-        <p>Postgres password: compose <span class="inlinecode">environment:</span> → secret file → referenced secret in the gateway → written by the deploy workflow from a GitHub secret.</p>
-        <div class="gate">gate → validate.sh green · zero plaintext secrets in tracked files</div>
+        <div class="pn">PART 1 · SOLO · ±30 MIN</div>
+        <h4>Hook up a secret for the db-connection</h4>
+        <p>Two connections, two database users. Passwords become secret files, a file-based provider resolves them as referenced secrets, and a feature-branch PR ships the fix that makes develop's connections Valid.</p>
+        <div class="gate">gate → both connections Valid on develop, fixed by the pipeline</div>
       </div>
       <div class="pcard p2">
         <div class="pn">PART 2 · SOLO · ±20 MIN</div>
@@ -230,90 +230,52 @@ body{
         <div class="gate">gate → green deploy run: migrate → ship → scan → verify</div>
       </div>
       <div class="pcard">
-        <div class="pn">PART 3 · SOLO · ±20 MIN</div>
-        <h4>Deploy a module and a JDBC driver</h4>
-        <p>Add a <span class="inlinecode">.modl</span> with headless license acceptance, find the JDBC driver in the config tree, and ship both through the pipeline.</p>
+        <div class="pn">PART 3 · SOLO · ±10 MIN</div>
+        <h4>Deploy a third-party module</h4>
+        <p>Add a <span class="inlinecode">.modl</span> with headless license and certificate acceptance in <span class="inlinecode">modules.json</span>, and ship it through the pipeline.</p>
         <div class="gate">gate → the module shows Running on dev, hands-free</div>
       </div>
     </div>
     <div class="goal">
       <span class="badge">Why this order</span>
-      <p>Part 2's migrate step needs the DB password that Part 1 turns into a proper secret. Part 3 rides the same deploy run you proved green in Part 2. Each part hands the next one its plumbing.</p>
+      <p>The warm-up surfaces the broken connections that Part 1 fixes. Part 2's migrate step needs the DB password that Part 1 turned into a proper secret. Part 3 rides the same deploy run you've proved green twice. Each part hands the next one its plumbing.</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-ups → Part 1 → Part 2 → Part 3</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up → Part 1 → Part 2 → Part 3</span></div>
 </section>
 
-<!-- 4 · WARM-UP 1 · SECRET TRIAGE -->
+<!-- 4 · WARM-UP · DEPLOY TO DEVELOP AND PROD -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
     <div class="stage">Warm-up · together</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">WARM-UP · 1</span><div><div class="title">Triage every secret-shaped value in the repo</div><div class="lead">Sorting is 80% of secrets management: public, per-environment, or secret. Do the sort on your own clone.</div></div></div>
+    <div class="sechead"><span class="num warm">WARM-UP</span><div><div class="title">Deploy to develop and prod, and check the database connections</div><div class="lead">Before you change anything, run the pipeline end to end. It comes back green, and yet develop's database connections are broken. That gap is exactly what Part 1 fixes.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Grep the repo for candidate secrets (see command) and skim the hits.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx">Sort each hit into <b>public / per-environment / secret</b> in <span class="inlinecode">NOTES.local.md</span>. Defaults like <span class="inlinecode">${POSTGRES_PASSWORD:-ignition}</span> count: which box is the default value in?</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx">Check the fence: <span class="inlinecode">git check-ignore .env secrets/anything</span> must both hit; <span class="inlinecode">*.example</span> files must be tracked.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Run <span class="inlinecode">scripts/validate.sh</span>: the secret scan must report <b>zero findings</b>. That's your baseline for the rest of the hour.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Pre-flight:</b> <span class="inlinecode">cp .env.example .env</span> → <span class="inlinecode">scripts/setup.sh</span> → <span class="inlinecode">scripts/validate.sh</span> green.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Deploy to develop:</b> in your fork, Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b>. Watch every step go green. Then do the same for prod.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the develop gateway:</b> <i>Config → Databases → Connections</i>. Both connections are <b>Faulted</b>: <span class="inlinecode">TimescaleDB</span> and <span class="inlinecode">TimescaleDB_Reports</span>.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check prod:</b> same picture. Your local gateway meanwhile is fine.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">Write the diagnosis question in <span class="inlinecode">NOTES.local.md</span>: the pipeline is green and the gateway is broken. <b>What can a config-only deploy never carry?</b></div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># step 1: hunt for secret-shaped values</span>
-grep -rniE "password|api_key|token|secret" \
-  --exclude-dir=.git .
+        <div class="code"><pre><span class="cm"># the deploy run says:</span>
+<span class="grn">✅ validate   ✅ ship files   ✅ scan   ✅ verify</span>
 
-<span class="cm"># step 3: is the fence up?</span>
-git check-ignore .env secrets/postgres_password.txt
-git ls-files secrets/   <span class="cm"># only *.example should list</span></pre></div>
-        <div class="goal" style="margin-top:18px">
-          <span class="badge">Three boxes</span>
-          <p><b>Public</b> → committed plain. <b>Per-environment</b> → committed defaults + env vars. <b>Secret</b> → never committed. Every value in every repo you'll ever touch goes in exactly one.</p>
+<span class="cm"># the develop gateway says:</span>
+<span class="cm"># Config → Databases → Connections</span>
+TimescaleDB           <span class="red">Faulted</span>
+TimescaleDB_Reports   <span class="red">Faulted</span></pre></div>
+        <div class="goal warn-g" style="margin-top:18px">
+          <span class="badge">Green ≠ working</span>
+          <p>The deploy ships <b>config</b>. Two things config alone can't carry: the <b>password values</b> (they must never be in Git) and the <b>per-environment database target</b>. Part 1 delivers both, the right way.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up 1 of 2</span></div>
-</section>
-
-<!-- 5 · WARM-UP 2 · LEAK DRILL -->
-<section class="slide">
-  <div class="topbar">
-    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Warm-up · together</div>
-  </div>
-  <div class="body">
-    <div class="sechead"><span class="num warm">WARM-UP · 2</span><div><div class="title">Leak a fake key, "remove" it, read it back from history</div><div class="lead">Prove to yourself that deleting a committed secret fixes nothing, and write down the real incident response.</div></div></div>
-    <div class="cols2">
-      <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">On a scratch branch <span class="inlinecode">drill/leak</span>, commit a file with an obviously fake key: <span class="inlinecode">API_KEY="ak_live_0badc0ffee"</span>.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx">"Fix" it: delete the line, commit again.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><span class="inlinecode">git log -p | grep ak_live</span>: still there, in every clone, forever.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Write the two-line incident response in <span class="inlinecode">NOTES.local.md</span>: <b>1. rotate the credential</b>, 2. then (optionally) scrub history. In that order, always.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx">Delete the branch. Never push it.</div></div>
-      </div>
-      <div>
-        <div class="code"><pre>git checkout -b drill/leak
-echo 'API_KEY="ak_live_0badc0ffee"' &gt; oops.txt
-git add oops.txt &amp;&amp; git commit -m "wire up historian"
-
-<span class="cm"># the "fix"</span>
-git rm oops.txt &amp;&amp; git commit -m "remove key"
-
-<span class="cm"># the lesson</span>
-git log -p | grep ak_live
-<span class="red">+API_KEY="ak_live_0badc0ffee"</span>   <span class="cm">← still readable</span>
-
-git checkout main &amp;&amp; git branch -D drill/leak</pre></div>
-        <div class="goal bad-g" style="margin-top:18px">
-          <span class="badge">Iron rule</span>
-          <p><b>A pushed secret is a burned secret.</b> Rotation makes it worthless; deletion only hides it from people who don't know <span class="inlinecode">git log -p</span>.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up 2 of 2 → now go solo</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up → now go solo</span></div>
 </section>
 
 <!-- 6 · PART 1 DIVIDER -->
@@ -323,16 +285,17 @@ git checkout main &amp;&amp; git branch -D drill/leak</pre></div>
     <div class="stage on-dark">Solo · Part 1 · Secrets</div>
   </div>
   <div class="body">
-    <div class="eyebrow">Part 1 · solo · ±20 min · exercises/lab.md</div>
-    <div class="title" style="color:#fff;max-width:26ch">Move the Postgres password up the ladder, rung by rung</div>
-    <p class="lead">One credential, three moves, ending exactly where the Wilms production setup lives: a secret file on disk, a referenced secret in the gateway, and CI as the source of the value.</p>
+    <div class="eyebrow">Part 1 · solo · ±30 min · exercises/lab.md</div>
+    <div class="title" style="color:#fff;max-width:26ch">Hook up a secret for the db-connection</div>
+    <p class="lead">The warm-up left both database connections Faulted on develop. Fix them the way our production setup runs: passwords as secret files, a file-based secret provider resolving them, and a full deploy that ships the fix.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1A:</b> compose <span class="mono" style="color:#dbe4f0">environment:</span> → a secret file at <span class="mono" style="color:#dbe4f0">/run/secrets/</span>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1B:</b> the gateway DB connection points at a <b>referenced secret</b> resolved from that file.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1C:</b> the deploy workflow <b>writes the secret file from a GitHub secret</b>, so dev's value never lives in the repo.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1A:</b> both database passwords become <b>secret files</b> at <span class="mono" style="color:#dbe4f0">/run/secrets/</span>: two connections, two users, two files.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1B:</b> a <b>file-based secret provider</b> on the gateway resolves them, and both connections point at <b>referenced secrets</b>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1C:</b> build the fix for develop: a <b>dev deployment-mode override</b> plus the deploy workflow <b>writing the secret files from GitHub secrets</b>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1D:</b> ship it as a <b>full deploy moment</b>: feature branch → PR → validation → merge → pipeline → develop's connections Valid.</span></li>
     </ul>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · A → B → C</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · A → B → C → D</span></div>
 </section>
 
 <!-- 7 · PART 1A -->
@@ -342,79 +305,161 @@ git checkout main &amp;&amp; git branch -D drill/leak</pre></div>
     <div class="stage">Part 1 · A</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1A</span><div><div class="title">Turn the Postgres password into a secret file</div><div class="lead">From an env var anyone can <span class="inlinecode">docker inspect</span>, to a read-only file only the process reads.</div></div></div>
+    <div class="sechead"><span class="num">1A</span><div><div class="title">Turn the Postgres passwords into secret files: one per database user</div><div class="lead">Two connections, same database server, different users: <span class="inlinecode">TimescaleDB</span> logs in as <span class="inlinecode">ignition</span>, <span class="inlinecode">TimescaleDB_Reports</span> as the read-only <span class="inlinecode">reporting</span> user. Each password goes from an env var anyone can <span class="inlinecode">docker inspect</span> to a read-only file.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx">See the leak first: <span class="inlinecode">docker inspect lab06-timescaledb | grep POSTGRES_PASSWORD</span> → plaintext.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Create the file from the committed example: <span class="inlinecode">cp secrets/postgres_password.txt.example secrets/postgres_password.txt</span>. Keep the <b>same value</b>: Postgres only sets the password on first volume init.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Edit <span class="inlinecode">docker-compose.yaml</span>: top-level <span class="inlinecode">secrets:</span> block, attach to the DB service, swap to <span class="inlinecode">POSTGRES_PASSWORD_FILE</span>.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx">Recreate and prove it: inspect shows no password; the file is at <span class="inlinecode">/run/secrets/postgres_password</span> inside the container.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx">See the leak first: <span class="inlinecode">docker inspect lab06-timescaledb | grep PASSWORD</span> → both values in plaintext.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx">Create both files from the committed examples: <span class="inlinecode">secrets/postgres_password.txt</span> and <span class="inlinecode">secrets/reporting_password.txt</span>. Keep the <b>same values</b>: Postgres only sets passwords on first volume init.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx">Edit <span class="inlinecode">docker-compose.yaml</span>: top-level <span class="inlinecode">secrets:</span> block with both files, <span class="inlinecode">POSTGRES_PASSWORD_FILE</span> on the DB service, and <b>both secrets attached to the gateway service</b>: its provider reads them in 1B.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Recreate and prove it: inspect shows no passwords; both files sit at <span class="inlinecode">/run/secrets/</span> inside the containers.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># docker-compose.yaml</span>
 secrets:
   postgres_password:
     file: ./secrets/postgres_password.txt
+  reporting_password:
+    file: ./secrets/reporting_password.txt
 
 services:
   timescaledb:
     secrets: [postgres_password]
     environment:
       POSTGRES_PASSWORD_FILE: <span class="cmd2">/run/secrets/postgres_password</span>
+  gateway-loc:
+    secrets: [postgres_password, reporting_password]
 
 <span class="cm"># step 4: the proof</span>
-docker compose up -d timescaledb
-docker inspect lab06-timescaledb | grep POSTGRES
-docker exec lab06-timescaledb \
-  ls -l /run/secrets/</pre></div>
+docker inspect lab06-timescaledb | grep PASSWORD
+docker exec lab06-gateway-loc ls -l /run/secrets/</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Same value</span>
-          <p>Changing the password here <b>won't</b> change it in an existing database volume. Ladder drills change <b>where the value lives</b>, not the value.</p>
+          <p>Changing a password here <b>won't</b> change it in an existing database volume. This step changes <b>where the value lives</b>, not the value.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · A of C</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · A of D</span></div>
 </section>
 
-<!-- 8 · PART 1B + 1C -->
+<!-- 8 · PART 1B -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Part 1 · B-C</div>
+    <div class="stage">Part 1 · B</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1B-1C</span><div><div class="title">Reference the secret in the gateway, then let the pipeline write the file</div><div class="lead">1B closes the gateway side: config holds a name, not a value. 1C closes the CI side: GitHub is where the real value lives.</div></div></div>
+    <div class="sechead"><span class="num">1B</span><div><div class="title">Create the file-based secret provider and reference both passwords</div><div class="lead">After this step the gateway config holds <b>names, not values</b>: that's what makes it safe to commit and able to travel to develop and prod.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>1B.</b> On the local gateway, create a <b>file-type secret provider</b> and add a secret named <span class="inlinecode">POSTGRES_PASSWORD</span> whose file path is the mounted secret file.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Re-point the DB connection's password at the <b>referenced</b> secret. Test: the connection stays <b>Valid</b>.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Prove nothing leaked: grep the exported config for the password value → no hits. The reference by name is all that's there (the <span class="inlinecode">"type": "Referenced"</span> shape from the teaching).</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><b>1C.</b> In your fork: add <span class="inlinecode">POSTGRES_PASSWORD</span> as an environment secret, then add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span> (before <span class="inlinecode">compose up</span>).</div></div>
-        <div class="step"><div class="ix">5</div><div class="tx">Push through a PR and watch the run: the workflow writes the file with <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, and the log shows <b>no value anywhere</b>.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx">On the local gateway, create a <b>file-type secret provider</b> named <span class="inlinecode">LabSecrets</span>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx">Add two secrets to it: <span class="inlinecode">POSTGRES_PASSWORD</span> → <span class="inlinecode">/run/secrets/postgres_password</span> and <span class="inlinecode">REPORTING_PASSWORD</span> → <span class="inlinecode">/run/secrets/reporting_password</span>.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx">Re-point <b>both</b> connections' passwords at their <b>referenced</b> secret: <span class="inlinecode">TimescaleDB</span> → <span class="inlinecode">POSTGRES_PASSWORD</span>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">REPORTING_PASSWORD</span>. Test: both stay <b>Valid</b>.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Prove nothing leaked: grep the exported config for both password values → no hits. All that's committed is the <span class="inlinecode">"type": "Referenced"</span> shape from the teaching.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># deploy.yml: the step you add in 1C</span>
+        <div class="code"><pre><span class="cm"># what lands in the committed config (per connection)</span>
+"password": {
+  "type": <span class="cmd2">"Referenced"</span>,
+  "data": {
+    "providerName": <span class="cmd2">"LabSecrets"</span>,
+    "secretName": <span class="cmd2">"REPORTING_PASSWORD"</span>
+  }
+}
+
+<span class="cm"># step 4: prove the export is clean</span>
+grep -r "$(cat secrets/postgres_password.txt)" \
+  services/config/ || echo "clean ✅"
+grep -r "$(cat secrets/reporting_password.txt)" \
+  services/config/ || echo "clean ✅"</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Names travel</span>
+          <p>The provider and the references are ordinary config: they <b>deploy</b>. The files behind them don't, and mustn't. 1C is about getting those files onto the develop host.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · B of D</span></div>
+</section>
+
+<!-- 9 · PART 1C -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 1 · C</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">1C</span><div><div class="title">Build the fix for develop: dev deployment-mode override plus secret files from CI</div><div class="lead">Develop faults for two reasons, so the fix has two halves: point the reports connection at the right database with a <b>dev deployment-mode override</b> (the Lab 04 mechanism), and let the deploy workflow write the secret files.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix">1</div><div class="tx"><b>Diagnose:</b> <span class="inlinecode">TimescaleDB_Reports</span> only exists in <span class="inlinecode">core</span>, so develop targets <span class="inlinecode">ignition_loc</span>. And neither secret file exists on the develop host yet.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target:</b> add the dev override <span class="inlinecode">…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json</span> with <span class="inlinecode">connectURL</span> → <span class="inlinecode">ignition_dev</span>. Copy the pattern from <span class="inlinecode">TimescaleDB</span>, which already has one.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values:</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on the <span class="inlinecode">lab-gateway-dev</span> environment.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span>, <b>before</b> <span class="inlinecode">compose up</span>: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret.</div></div>
+        <div class="step"><div class="ix">5</div><div class="tx">Sanity check locally: <span class="inlinecode">scripts/validate.sh</span> green, secret scan zero findings, <span class="inlinecode">git status</span> shows no <span class="inlinecode">secrets/*.txt</span>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># deploy.yml: the step you add</span>
 - name: Materialize secret files
   env:
     POSTGRES_PASSWORD: <span class="cmd2">${{ secrets.POSTGRES_PASSWORD }}</span>
+    REPORTING_PASSWORD: <span class="cmd2">${{ secrets.REPORTING_PASSWORD }}</span>
   run: |
     umask 177
     mkdir -p secrets
     printf '%s' "$POSTGRES_PASSWORD" \
       &gt; secrets/postgres_password.txt
-
-<span class="cm"># 1B step 3: prove the export is clean</span>
-grep -r "$(cat secrets/postgres_password.txt)" \
-  services/config/ || echo "clean ✅"</pre></div>
-        <div class="goal good-g" style="margin-top:18px">
-          <span class="badge">✅ Part 1 gate</span>
-          <p><span class="inlinecode">scripts/validate.sh</span> green, secret scan zero findings, and you can narrate the full path: <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</p>
+    printf '%s' "$REPORTING_PASSWORD" \
+      &gt; secrets/reporting_password.txt</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Nothing deployed yet</span>
+          <p>Everything so far is local edits plus GitHub settings. Develop is still Faulted, on purpose: <b>the fix only lands through the pipeline</b>, and that's 1D.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · B-C of C</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · C of D</span></div>
+</section>
+
+<!-- 10 · PART 1D · THE FULL DEPLOY MOMENT -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 1 · D · the full deploy</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">1D</span><div><div class="title">Ship the fix: branch, PR, validation, pipeline, then verify develop</div><div class="lead">This is the full deploy moment, every station spelled out. Don't rush it: watch each one actually happen before moving to the next.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix">1</div><div class="tx"><b>Branch:</b> <span class="inlinecode">git checkout -b feature/fix-dev-db-connections</span>.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Commit and push:</b> the dev override, the referenced-secret config and the <span class="inlinecode">deploy.yml</span> step. Check the diff: <b>no secret values in it</b>.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Open the PR</b> against <span class="inlinecode">main</span> and read your own diff, top to bottom.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>Watch the PR validate:</b> <span class="inlinecode">ci.yml</span> runs on the PR: validate + secret scan green before anyone may merge.</div></div>
+        <div class="step"><div class="ix">5</div><div class="tx"><b>Merge</b> the PR into <span class="inlinecode">main</span>.</div></div>
+        <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → compose up → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
+        <div class="step"><div class="ix">7</div><div class="tx"><b>Verify develop:</b> <i>Config → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_dev</span>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre>feature/fix-dev-db-connections
+    │ push
+    ▼
+PR → <span class="cmd2">ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
+    │ merge
+    ▼
+main → <span class="cmd2">deploy.yml</span>: secrets → up → scan → verify <span class="grn">✅</span>
+    │
+    ▼
+develop gateway
+  TimescaleDB           <span class="grn">Valid</span>
+  TimescaleDB_Reports   <span class="grn">Valid</span> → ignition_dev</pre></div>
+        <div class="goal good-g" style="margin-top:18px">
+          <span class="badge">✅ Part 1 gate</span>
+          <p>Both connections <b>Valid on develop, fixed by the pipeline and not by hand</b>, and you can narrate the full path: <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · D of D</span></div>
 </section>
 
 <!-- 9 · PART 2 DIVIDER -->
@@ -442,13 +487,13 @@ grep -r "$(cat secrets/postgres_password.txt)" \
     <div class="stage">Part 2 · A</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">2A</span><div><div class="title">Write migration 0002 as an up/down pair, apply it locally</div><div class="lead">Golang-migrate conventions, exactly like the Proferro repo: 4-digit number, descriptive name, always a pair.</div></div></div>
+    <div class="sechead"><span class="num phase2">2A</span><div><div class="title">Write migration 0002 as an up/down pair, apply it locally</div><div class="lead">Golang-migrate conventions, exactly like our file-based production repo: 4-digit number, descriptive name, always a pair.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Create <span class="inlinecode">db-migration/migrate/0002_add_downtime_log.up.sql</span> <b>and</b> <span class="inlinecode">…0002_add_downtime_log.down.sql</span>. The down undoes exactly what the up does.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx">Apply it locally: <span class="inlinecode">scripts/migrate.sh up</span> (golang-migrate in Docker, like Proferro's <span class="inlinecode">migrate.sh</span>).</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Apply it locally: <span class="inlinecode">scripts/migrate.sh up</span> (golang-migrate in Docker, like the production <span class="inlinecode">migrate.sh</span>).</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Read the ledger: the <span class="inlinecode">schema_migrations</span> table now says version <span class="inlinecode">2</span>, not dirty. Run <span class="inlinecode">migrate.sh up</span> again → <i>no change</i>: it only applies what's missing.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Now the rule the tool <b>won't</b> enforce for you: edit an already-applied migration file. Nothing complains, and that's the trap: other environments would silently diverge. Undo the edit; changes go in <span class="inlinecode">0003</span>. That's why Proferro's <span class="inlinecode">docs/MIGRATIONS.md</span> makes it a written rule.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Now the rule the tool <b>won't</b> enforce for you: edit an already-applied migration file. Nothing complains, and that's the trap: other environments would silently diverge. Undo the edit; changes go in <span class="inlinecode">0003</span>. That's why the production repo's <span class="inlinecode">docs/MIGRATIONS.md</span> makes it a written rule.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 0002_add_downtime_log.up.sql</span>
@@ -468,7 +513,7 @@ docker exec lab06-timescaledb psql -U ignition \
   -d ignition_loc -c 'SELECT * FROM schema_migrations;'</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Pairs, always</span>
-          <p>"All migrations must come in pairs" and "never edit a deployed migration" are the two Proferro rules that keep every environment replayable from zero. The tool tracks position; <b>the discipline is yours</b>.</p>
+          <p>"All migrations must come in pairs" and "never edit a deployed migration" are the two production rules that keep every environment replayable from zero. The tool tracks position; <b>the discipline is yours</b>.</p>
         </div>
       </div>
     </div>
@@ -503,7 +548,7 @@ docker exec lab06-timescaledb psql -U ignition \
   -d ignition_dev -c 'SELECT * FROM schema_migrations;'</pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">✅ Part 2 gate</span>
-          <p>A green deploy run whose log shows <b>migrate before ship</b>, and dev's ledger at version 2. Bonus debrief point: Proferro runs this step <b>after</b> the scan with <span class="inlinecode">continueOnError: true</span>. What can go wrong there that can't go wrong in yours?</p>
+          <p>A green deploy run whose log shows <b>migrate before ship</b>, and dev's ledger at version 2. Bonus debrief point: the production pipeline you saw runs this step <b>after</b> the scan with <span class="inlinecode">continueOnError: true</span>. What can go wrong there that can't go wrong in yours?</p>
         </div>
       </div>
     </div>
@@ -518,25 +563,25 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="stage on-dark">Solo · Part 3 · Modules &amp; JARs</div>
   </div>
   <div class="body">
-    <div class="eyebrow">Part 3 · solo · ±20 min · exercises/lab.md</div>
-    <div class="title" style="color:#fff;max-width:26ch">Deploy a third-party module and a JDBC driver through the pipeline</div>
-    <p class="lead">The binaries become deployable state: committed, license-accepted in config, shipped by the same run as everything else. The proof of success is a gateway that boots complete with <b style="color:#fff">no hands on it</b>.</p>
+    <div class="eyebrow">Part 3 · solo · ±10 min · exercises/lab.md</div>
+    <div class="title" style="color:#fff;max-width:26ch">Deploy a third-party module through the pipeline</div>
+    <p class="lead">The binary becomes deployable state: committed, license-accepted in config, shipped by the same run as everything else. The proof of success is a gateway that boots complete with <b style="color:#fff">no hands on it</b>.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>3A:</b> add a <span class="mono" style="color:#dbe4f0">.modl</span> to <span class="mono" style="color:#dbe4f0">third-party-modules/</span> with headless license/cert acceptance, and ship it.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>3B:</b> find the JDBC driver JAR inside the 8.3 config tree, and explain how it reaches the gateway.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Add a <span class="mono" style="color:#dbe4f0">.modl</span> from <span class="mono" style="color:#dbe4f0">third-party-modules/</span> with headless license/cert acceptance, and ship it.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Verify it shows <b>Running</b> on develop without anyone clicking an install dialog, then run the negative test.</span></li>
     </ul>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · A → B</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · the module</span></div>
 </section>
 
-<!-- 13 · PART 3A -->
+<!-- 13 · PART 3 · THE MODULE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Part 3 · A</div>
+    <div class="stage">Part 3 · the module</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">3A</span><div><div class="title">Add a third-party module with headless license acceptance</div><div class="lead">The module loads from the external-modules folder, and the license is accepted by config, not by a click.</div></div></div>
+    <div class="sechead"><span class="num">3</span><div><div class="title">Add a third-party module with headless license acceptance</div><div class="lead">The module loads from the external-modules folder, and the license is accepted by config, not by a click.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx">Pick a module from <span class="inlinecode">third-party-modules/</span> that isn't enabled yet (the repo ships spares). Confirm the compose <span class="inlinecode">command:</span> passes <span class="inlinecode">-Dignition.gateway.externalModulesFolder</span>.</div></div>
@@ -560,37 +605,28 @@ docker exec lab06-timescaledb psql -U ignition \
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · A of B</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · the module → the gate</span></div>
 </section>
 
-<!-- 14 · PART 3B + DONE GATE -->
+<!-- 14 · DONE GATE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Part 3 · B · the gate</div>
+    <div class="stage">Definition of done</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">3B</span><div><div class="title">Find the JDBC driver JAR in the config tree</div><div class="lead">In 8.3 a database driver is a config resource: the JAR travels with the ordinary config deploy. Prove it to yourself.</div></div></div>
-    <div class="cols2">
-      <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx">Find the driver: <span class="inlinecode">find services/config -name "*.jar"</span> → the PostgreSQL driver sits under <span class="inlinecode">…/database-driver/PostgreSQL/</span>, next to its <span class="inlinecode">config.json</span>.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Open the sibling <span class="inlinecode">resource.json</span>: the JAR is listed in <span class="inlinecode">"files"</span>. It's a versioned resource like any view or connection.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Answer in <span class="inlinecode">NOTES.local.md</span>: how does this JAR reach the dev gateway? (Hint: the same ship step as everything else. No special JAR handling exists, and none is needed.)</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx">Compare with the other kind: where do Wilms' <b>library JARs</b> (RabbitMQ client) land, and why can't those live in the config tree?</div></div>
-      </div>
-      <div>
-        <div class="goal good-g" style="margin-top:0">
-          <span class="badge">✅ Done when</span>
-          <p><b>Part 1:</b> validate.sh green, zero plaintext secrets, deploy workflow writes the secret file · <b>Part 2:</b> green run with migrate-before-ship, dev ledger at version 2, up/down pair committed · <b>Part 3:</b> module Running on dev with acceptance in config, and you can say where both kinds of JAR live and how each ships.</p>
-        </div>
-        <div class="goal warn-g" style="margin-top:14px">
-          <span class="badge">Debrief fuel</span>
-          <p>Bring answers: why must the migrate step never be <span class="inlinecode">continueOnError</span>? · what breaks first on a fresh gateway if license acceptance lives in someone's memory instead of config? · which rung of the ladder would you actually run at your plant, and what stops you from the next one up?</p>
-        </div>
-      </div>
+    <div class="sechead"><span class="num">GATE</span><div><div class="title">Definition of done for all three parts</div><div class="lead">Walk these three gates before you call it. If one fails, that part isn't done, however green your last run was.</div></div></div>
+    <div class="steps" style="max-width:1000px">
+      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on develop</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
+      <div class="step"><div class="ix p">2</div><div class="tx"><b>Part 2:</b> a green deploy run whose log shows <b>migrate before ship</b>, dev's <span class="inlinecode">schema_migrations</span> ledger at version 2, and the up/down pair committed.</div></div>
+      <div class="step"><div class="ix">3</div><div class="tx"><b>Part 3:</b> the module shows <b>Running</b> on develop with license acceptance in config, and you've seen what the negative test does on a fresh boot.</div></div>
+    </div>
+    <div class="goal warn-g" style="margin-top:22px">
+      <span class="badge">Debrief fuel</span>
+      <p>Bring answers: why must the migrate step never be <span class="inlinecode">continueOnError</span>? · what breaks first on a fresh gateway if license acceptance lives in someone's memory instead of config? · which of the seven stations of your 1D deploy would you automate away at your plant, and which one needs a human?</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · B of B → stretch or debrief</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The gate → stretch or debrief</span></div>
 </section>
 
 <!-- 15 · STRETCH -->
@@ -603,7 +639,7 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="sechead"><span class="num warm">OPTIONAL</span><div><div class="title">Stretch: three ways to go deeper</div><div class="lead">Pick by appetite. Each one extends a different part of the hour.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Committed ciphertexts, done safely.</b> Explore the 8.3 <span class="inlinecode">ignition-secrets-tool.sh</span>: generate a root key + KEK under <span class="inlinecode">data/config/ignition/keys/</span>, copy the <b>same keys</b> to a second gateway, and check that an embedded-secret ciphertext created on one decrypts on the other. Write down what the "secret" is now, and who should own it.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>The internal secret provider, and where it breaks.</b> On your local gateway, create an <b>internal secret provider</b> and store <span class="inlinecode">REPORTING_PASSWORD</span> in it: the gateway encrypts the value and keeps the <b>ciphertext in its own config</b>. Point <span class="inlinecode">TimescaleDB_Reports</span> at it: locally it stays Valid. Now ship that config through the pipeline and check develop: <b>Faulted</b>, because the ciphertext only decrypts on the gateway that created it. Explore <span class="inlinecode">ignition-secrets-tool.sh</span> (shared root key + KEK under <span class="inlinecode">data/config/ignition/keys/</span>) as the escape hatch, then revert to the referenced secret and write down which trade-off you'd pick.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Expand-contract rename.</b> Rename a column with two migrations (<span class="inlinecode">0003</span> add + backfill, <span class="inlinecode">0004</span> drop) and a screen change in between, so no deploy ever breaks a live query.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Secret scanner in CI.</b> Add a <span class="inlinecode">gitleaks</span> job to <span class="inlinecode">ci.yml</span> (with <span class="inlinecode">fetch-depth: 0</span>: the scanner must see history, not the tip). Test it with a fake-key PR → red ❌ → close without merging.</div></div>
       </div>
@@ -618,7 +654,7 @@ secret-scan:
     - uses: gitleaks/gitleaks-action@v2</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Two philosophies</span>
-          <p>Stretch 1 and Part 1 are <b>competing answers to the same problem</b>: references + files, or ciphertexts + shared keys. Both are defensible; know what each makes easy and what each makes dangerous.</p>
+          <p>Stretch 1 and Part 1 are <b>competing answers to the same problem</b>: references + files, or gateway-encrypted ciphertexts + shared keys. Both are defensible; know what each makes easy and what each makes dangerous.</p>
         </div>
       </div>
     </div>
@@ -634,16 +670,17 @@ secret-scan:
   </div>
   <div class="body">
     <div class="eyebrow">Nicely done</div>
-    <div class="title" style="color:#fff;max-width:26ch">Secrets, schema, modules and JARs: all four now travel through the pipeline.</div>
+    <div class="title" style="color:#fff;max-width:26ch">Secrets, schema and modules: all three now travel through the pipeline.</div>
     <ul class="checks" style="max-width:940px;margin-top:22px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>One credential climbed the whole ladder: <b>GitHub secret → file → provider → reference</b>, with zero secret material in Git.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Two db-connections authenticate through <b>referenced secrets from a file-based provider</b>: GitHub secret → file → provider → reference, with zero secret material in Git.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You fixed develop with a <b>full deploy moment</b>: feature branch → PR → validation → merge → pipeline → connections Valid. That chain is the whole course in one exercise.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>A schema change shipped as a <b>versioned up/down pair</b>, applied by the pipeline before the screens that need it.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>A module and a JDBC driver deployed <b>as data</b>: committed binaries, license acceptance in config, no hands on the gateway.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>A module deployed <b>as data</b>: committed binary, license acceptance in config, no hands on the gateway.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Bring one <b>surprise</b> and one <b>question</b> to the debrief.</span></li>
     </ul>
     <div class="goal" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-left-color:var(--peri2)">
       <span class="badge" style="background:var(--peri2);color:var(--navy)">Next</span>
-      <p style="color:#c4cfde">Debrief: which secrets approach fits your plant, and the Proferro ordering question. Then: <b style="color:#fff">Lab 07: deploying to multiple gateways and multiple sites</b>.</p>
+      <p style="color:#c4cfde">Debrief: which secrets approach fits your plant, and the migrate-ordering question from Part 2. Then: <b style="color:#fff">Lab 07: deploying to multiple gateways and multiple sites</b>.</p>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 06 complete</span></div>
@@ -652,7 +689,7 @@ secret-scan:
 </div>
 
 <div class="hud"><div class="bar" id="bar"></div></div>
-<div class="pager" id="pager">01 / 16</div>
+<div class="pager" id="pager">01 / 17</div>
 <div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
 
 <script>
@@ -662,6 +699,7 @@ const bar=document.getElementById('bar');
 const pager=document.getElementById('pager');
 const hint=document.getElementById('hint');
 function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
 function update(){
   const i=Math.round(deck.scrollTop/window.innerHeight);
   bar.style.width=((i)/(slides.length-1)*100)+'%';
@@ -669,7 +707,18 @@ function update(){
   const dark=slides[i]&&slides[i].classList.contains('dark');
   pager.classList.toggle('on-dark',dark);
   hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
 }
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
 deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
 window.addEventListener('keydown',e=>{
   const i=Math.round(deck.scrollTop/window.innerHeight);
