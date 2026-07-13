@@ -109,6 +109,16 @@ jobs:
       # printf '%s'). Without it the step below finds nothing and ships
       # nothing, which is exactly the warm-up's broken state.
 
+      - name: Materialize secret files
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          REPORTING_PASSWORD: ${{ secrets.REPORTING_PASSWORD }}
+        run: |
+          umask 177
+          mkdir -p secrets
+          printf '%s' "$POSTGRES_PASSWORD" > secrets/postgres_password.txt
+          printf '%s' "$REPORTING_PASSWORD" > secrets/reporting_password.txt
+
       - name: Ship secret files into gateway container
         # Hands whatever the Materialize step wrote under secrets/ to the
         # gateway at /run/secrets/ — the path the file-type secret provider
@@ -134,6 +144,9 @@ jobs:
       # steps (old screens tolerate a new table; new screens don't tolerate a
       # missing one) and NOT continue-on-error (a failed migration must stop
       # the run before anything ships).
+
+      - name: Migrate database
+        run: scripts/migrate.sh up --database ignition_dev
 
       - name: Ship module manifest and third-party modules (restart if changed)
         # Part 3 of the lab: the module binary and its manifest entry are
