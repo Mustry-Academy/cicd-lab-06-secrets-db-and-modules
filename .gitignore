@@ -1,0 +1,103 @@
+# Local env
+.env
+
+# Secret files (Part 1 of the lab). Only the *.example files and the README
+# are tracked — a real secret must never be committed. If `git status` lists
+# anything else under secrets/, stop and fix it before committing.
+/secrets/*
+!/secrets/*.example
+!/secrets/README.md
+
+# Ignition 8.3 secrets-management key files: services/config/ignition/keys/
+# (root.json + kek.json) ARE deliberately committed in this lab. They are
+# dummy seed keys that make the committed embedded ciphertexts decrypt on
+# every student's LOCAL gateway — and on no other gateway, because
+# .deployignore keeps them out of the deploy payload. In a real repo these
+# files are the secret and must never be committed (see
+# docs/secrets-management.md §4); committing them here is the lab's
+# starting-state anti-pattern, on purpose.
+
+# Local scratch notes used during the lab
+NOTES.local.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Python (used by any lab tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+
+# Database files
+**/db/
+**/metricsdb/
+**/autobackup/
+**/datacache/
+**/config/ignition/tags/*.idb
+**/db_backup_sqlite.idb
+**/valueStore.idb
+
+# Cache and temporary files
+**/jar-cache/
+**/request
+**/response
+*.tmp
+*.bak
+**/var
+
+# Log files
+*.log
+**/logs
+
+# Certificates and security
+**/certificates/
+**/keystore/
+
+# Runtime configuration (environment-specific)
+**/config/local
+**/config/resources/local
+
+# The gateway-owned INTERNAL identity: the default user source (users.json
+# holds the admin password hash!), its identity provider, and the OPC-UA
+# module's user source belong to ONE gateway. Committing them ships your
+# local gateway's admin credentials to every gateway you deploy to — and
+# locks everyone out of dev/prod. Identity resources you configure yourself
+# (a database or AD user source, a SAML/OIDC identity provider) hold no
+# password data and ARE tracked and deployed like any other config.
+**/config/resources/core/ignition/user-source/default/
+**/config/resources/core/ignition/user-source/opcua-module/
+**/config/resources/core/ignition/identity-provider/default/
+
+# Dev/prod gateway state (bind mounts written by the gateways + CI deploys,
+# see docker-compose.yaml). The README stays so the folder is visible in
+# every clone.
+/gateways/*
+!/gateways/README.md
+
+# Gateway-specific runtime files
+**/.container-init.conf
+
+# Backup and converted files
+**/conversion-report.txt
+**.digest.json
+
+# Project conversion artifacts
+**/projects/conversion-report.txt
+**/migration-log-*.md
+**/.resources/
+
+# Alarm history files
+**/.alarms_*
+
+**/themes.digest.json
+**/fonts.digest.json
+**/icons.digest.json

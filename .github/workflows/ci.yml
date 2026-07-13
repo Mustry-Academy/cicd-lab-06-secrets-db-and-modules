@@ -1,0 +1,156 @@
+# PR validation — runs on every pull request into main.
+#
+# GitHub Flow has one long-lived branch, so we validate PRs into it:
+#   main  ← feature/* branches merge here via PR. A push to main then ships to
+#           the dev gateway (deploy.yml); a manual deploy.yml run with target=prod ships to prod.
+#
+# Purpose: catch the cheap stuff before a deploy gets near it. We DON'T spin
+# up Ignition here; that's left to the deploy workflow on its self-hosted
+# runner. The linters below mirror the ones Lab 03 introduced (yamllint,
+# actionlint, shellcheck, ign-lint) plus this lab's own JSON / .deployignore
+# checks, and they all run free on ubuntu-latest.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# Cancel any in-flight CI run for this PR when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default.
+permissions:
+  contents: read
+
+jobs:
+  # Job ids double as the status-check names branch protection matches on.
+  # Keep them stable — renaming silently orphans required checks configured on
+  # main.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python tools
+        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .
+
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+
+      - name: shellcheck
+        # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -x scripts/*.sh
+
+      - name: ignition-lint (Perspective views)
+        run: ign-lint --config rule_config.json --files "projects/**/view.json"
+
+      - name: docker compose config
+        run: docker compose config -q
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JSON validity sweep
+        # Walks every *.json under projects/ and services/ and confirms it
+        # parses. Failures surface as PR annotations via the ::error syntax.
+        run: |
+          set +e
+          fail=0
+          while IFS= read -r f; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error file=$f::Invalid JSON"
+              fail=1
+            fi
+          done < <(find projects services -type f -name '*.json' 2>/dev/null)
+          if [ "$fail" -eq 0 ]; then
+            echo "All JSON files parse cleanly."
+          fi
+          exit $fail
+
+      - name: .deployignore syntax
+        # Patterns must be relative (no leading /). Other shapes are fine —
+        # the prune step is forgiving.
+        run: |
+          set +e
+          [ -f .deployignore ] || { echo "No .deployignore — nothing to validate"; exit 0; }
+          fail=0
+          n=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            n=$((n+1))
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            if [[ "$line" =~ ^/ ]]; then
+              echo "::error file=.deployignore,line=$n::Pattern must be relative, not absolute: $line"
+              fail=1
+            fi
+          done < .deployignore
+          if [ "$fail" -eq 0 ]; then
+            echo ".deployignore patterns look fine."
+          fi
+          exit $fail
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No real secret files committed
+        # Only *.example files and the README are allowed under secrets/.
+        # Anything else tracked there is a leak — and a pushed secret is a
+        # burned secret: rotate it, don't just delete the file.
+        run: |
+          set -euo pipefail
+          bad="$(git ls-files 'secrets/' | grep -vE '\.example$|/README\.md$' || true)"
+          if [ -n "$bad" ]; then
+            while IFS= read -r f; do
+              echo "::error file=$f::Secret file committed — rotate this credential NOW, then remove the file"
+            done <<< "$bad"
+            exit 1
+          fi
+          echo "secrets/ holds only example files."
+
+      - name: No secret values in the gateway payload
+        # The values in secrets/*.example are the lab's known local-dev
+        # passwords. None of them may ever appear in what we ship to a
+        # gateway (projects/ + services/config/) — a hit means someone
+        # pasted a password into exported config instead of using a
+        # referenced secret.
+        run: |
+          set -euo pipefail
+          fail=0
+          for ex in secrets/*.example; do
+            [ -f "$ex" ] || continue
+            value="$(cat "$ex")"
+            [ -n "$value" ] || continue
+            if hits="$(grep -rl -F "$value" projects/ services/ 2>/dev/null)"; then
+              while IFS= read -r f; do
+                echo "::error file=$f::Contains the secret value from $ex — use a referenced secret instead"
+              done <<< "$hits"
+              fail=1
+            fi
+          done
+          if [ "$fail" -eq 0 ]; then
+            echo "No known secret values in the gateway payload."
+          fi
+          exit $fail

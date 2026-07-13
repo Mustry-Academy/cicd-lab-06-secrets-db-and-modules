@@ -1,0 +1,60 @@
+# .deployignore — patterns NOT to copy onto the gateway during a file-based deploy.
+#
+# Format: gitignore-style. One pattern per line. Blank lines and lines starting
+# with `#` are ignored. Trailing slashes match directories.
+#
+# The deploy script reads this file and prunes the working tree before copying.
+# Anything matched here exists in the repo but never lands on the gateway.
+
+# Lab-only files that have nothing to do with the gateway runtime
+README.md
+LICENSE
+.deployignore
+.gitignore
+.gitattributes
+.env.example
+.github/
+docs/
+exercises/
+instructor-notes/
+scripts/
+tests/
+third-party-modules/
+db-init/
+db-migration/
+# Secret FILES never travel inside the config payload — the deploy workflow
+# materializes them from GitHub secrets on the target host instead.
+secrets/
+# Ignition secrets-management key files: whoever holds these can decrypt
+# every embedded ciphertext. They belong to ONE gateway; never ship them.
+services/config/ignition/keys/
+services/config/local/
+# Per-instance identity (UUID, OPC-UA keystores, machine-local system props).
+# Must never be copied onto another gateway — each instance owns its own.
+services/config/resources/local/
+# The gateway-owned INTERNAL identity: users.json in the default user source
+# carries the LOCAL gateway's admin password hash, and the default identity
+# provider is bound to it. Deploying them overwrites the target gateway's
+# own admin user — instant lockout. They are untracked in git too; these
+# entries protect manual deploys run from a working tree where the local
+# gateway has written them. Identity resources you add yourself (database
+# or AD user sources, SAML/OIDC providers) hold no password data and deploy
+# normally — as does security-properties (permission policy).
+services/config/resources/core/ignition/user-source/default/
+services/config/resources/core/ignition/user-source/opcua-module/
+services/config/resources/core/ignition/identity-provider/default/
+# Dev/prod gateway state (bind mounts) — never part of a deploy payload
+gateways/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+
+# Compose / dev-only files
+docker-compose.yaml
+.env

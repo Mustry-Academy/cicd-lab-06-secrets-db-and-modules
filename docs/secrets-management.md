@@ -74,11 +74,27 @@ just works); on deployed environments, the infra team or the deploy workflow —
 Ignition 8.3 added first-class **secrets management**: gateway config no longer
 needs to store secret values inline. Two flavours matter for CI/CD:
 
-- **Embedded secrets** — the value is encrypted by *this* gateway and stored in
-  its config. Fine for a single hand-managed gateway, but the ciphertext is
-  encrypted against that gateway's keys, so a committed ciphertext only
-  decrypts on the gateway that produced it — on a fresh container it's a broken
-  reference.
+- **Embedded secrets** — the value is encrypted and stored in the gateway's
+  own config. Two very different security stories hide behind that sentence:
+  - **Default keys (out of the box):** fresh Ignition installations ship with
+    a *default encryption key that is the same on every installation*. A
+    committed embedded ciphertext therefore decrypts on ANY fresh gateway —
+    it isn't protection at all, just obfuscation. (Verified on 8.3.6: a
+    ciphertext created on one gateway decrypts cleanly on a brand-new
+    container.)
+  - **Custom keys (`ignition-secrets-tool.sh`):** once a gateway runs its own
+    root key + KEK, its ciphertexts only decrypt on gateways holding those
+    same key files. On any other gateway the resource faults with
+    `Unable to decrypt ciphertext`.
+
+  This lab's LOCAL gateway runs **custom keys, committed as part of the seed**
+  (`services/config/ignition/keys/`, passphrase in `docker-compose.yaml` via
+  `IGNITION_ROOT_KEY_PASSWORD`) — that's why the committed db-connection
+  ciphertexts work on your local gateway, while dev/prod (which never receive
+  the key files — `.deployignore` excludes them) fault on exactly that
+  decrypt error. In a real repo those key files are the secret and must never
+  be committed; committing them here is the seed's deliberate anti-pattern,
+  and Part 1 replaces the whole construction with referenced secrets.
 - **Referenced secrets** — the config stores a *reference*; the value itself
   comes from a secret provider at runtime, e.g. a **file** (which is exactly
   what a file-based secret is: a file under `/run/secrets/`). Real serialized
@@ -101,12 +117,16 @@ environment) — one mental model everywhere.
 Ignition 8.3 ships a **secrets-management key CLI tool**
 (`ignition-secrets-tool.sh` / `.bat`) that manages the encryption keys behind
 embedded secrets — a root key and key-encryption keys stored as JSON files
-under `data/config/ignition/keys/` (`root.json`, `kek.json`). If you distribute
-the *same* keys to your gateways (redundant pairs already work this way),
-committed ciphertext decrypts everywhere, which makes "commit the embedded
-ciphertext" a defensible alternative to file-based secrets. The trade: the key
-files become the secret — infra distributes them out-of-band, and they must
-never be committed. Docs:
+under `data/config/ignition/keys/` (`root.json`, `kek.json`; the root key is
+passphrase-protected, and the gateway gets the passphrase at boot via the
+`IGNITION_ROOT_KEY_PASSWORD` / `IGNITION_ROOT_KEY_PASSWORD_FILE` environment
+variables). If you distribute the *same* keys to your gateways (redundant
+pairs already work this way), committed ciphertext decrypts everywhere, which
+makes "commit the embedded ciphertext" a defensible alternative to file-based
+secrets. The trade: the key files become the secret — infra distributes them
+out-of-band, and they must never be committed. And remember the default-key
+caveat above: WITHOUT custom keys, "shared keys" is silently what you already
+have — shared with every Ignition installation in the world. Docs:
 https://docs.inductiveautomation.com/docs/8.3/platform/security/secrets-management/secrets-management-key-cli-tool
 
 ## 4. What should NEVER be committed
@@ -121,14 +141,17 @@ https://docs.inductiveautomation.com/docs/8.3/platform/security/secrets-manageme
   <!-- [VERIFY] exact 8.3 on-disk names/paths for the gateway keystores -->
 - The gateway's secrets-management **key files**
   (`data/config/ignition/keys/root.json`, `kek.json`) — if you use the
-  shared-keys/ciphertext approach, these ARE the secret
+  shared-keys/ciphertext approach, these ARE the secret. (This lab's repo
+  deliberately commits a dummy pair as part of the broken starting state —
+  see §3 — precisely so you can see what it enables and why you wouldn't.)
 - Exported `config.json` containing **embedded** secret ciphertext — *unless*
   you deliberately run the shared-keys approach above and treat the keys as the
   secret; otherwise use referenced secrets so the question never comes up
 
-Enforcement: the repo's `scripts/validate.sh` should run a secret scanner
-(e.g. **gitleaks**) locally and in `ci.yml`, so a leaked key fails the PR
-before a human ever reviews it. <!-- TODO(infra): wire gitleaks into validate.sh + ci.yml -->
+Enforcement: `scripts/validate.sh` runs a secret scan (tracked files under
+`secrets/`, known values in the gateway payload, plus **gitleaks** when
+installed), and `ci.yml` runs the same scan as a required PR check. Wiring a
+full gitleaks history scan into CI is stretch S3 of the lab.
 
 ## 5. How this maps onto the lab's pipeline
 

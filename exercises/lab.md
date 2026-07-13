@@ -13,9 +13,13 @@ references throughout.
 * 60 min you-do ([`slides/assignment.html`](../slides/assignment.html) mirrors this file)
 * Debrief
 
-<!-- TODO(infra): the lab repo scaffolding (compose stack, secrets/ dir,
-     db-migration/ dir, scripts/migrate.sh, spare .modl files, deploy.yml
-     skeleton) is not built yet. The exercises below define the target. -->
+<!-- Infra status: the scaffolding (compose stack, secrets/ dir, db-migration/
+     + scripts/migrate.sh, spare .modl, ci.yml secret scan, deploy.yml skeleton
+     with the 1C/2B insertion points marked) is built, and the seeded broken
+     state is verified live on 8.3.6 (local Valid, dev Faulted on "Unable to
+     decrypt ciphertext"; migrate.sh up/down/version green). Still open before
+     the course: the fork-side pipeline runs — see instructor-notes/lab-key.md
+     §A2. -->
 
 ## Goal
 
@@ -84,9 +88,15 @@ gateway, Config → Databases → Connections: both connections (`TimescaleDB` a
 question in `NOTES.local.md`: the pipeline is green and the gateway is broken —
 what can a config-only deploy never carry? (Answer lands in Part 1: the password
 values and the per-environment database target.)
-<!-- TODO(infra): seed the repo so both connections fault on dev/prod out of the
-     box: TimescaleDB_Reports exists only in core (points at ignition_loc), and
-     no secret files exist on the dev/prod hosts. gitleaks step in validate.sh. -->
+<!-- Seeded state: TimescaleDB_Reports exists only in core (username
+     `reporting`, connectURL → ignition_loc); TimescaleDB has the loc/dev/prd
+     overrides. Both passwords are Embedded ciphertexts under CUSTOM
+     secrets-management keys that are committed for the local gateway
+     (services/config/ignition/keys/ + IGNITION_ROOT_KEY_PASSWORD in compose)
+     and excluded from the deploy payload — so local decrypts them and
+     dev/prod fault with "Unable to decrypt ciphertext", by design. See
+     instructor-notes/lab-key.md §A1 for the verified mechanics and the
+     mint tooling. -->
 
 ### Part 1 — hook up a secret for the db-connection (±30 min)
 Two db-connections, same database server, different users: `TimescaleDB` logs in
@@ -122,7 +132,18 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and dev's ledger at version 2.
 
 ### Part 3 — deploy a third-party module (±10 min)
-- Enable a spare `.modl` from `third-party-modules/` in `services/modules.json` with `certFingerprint` + `licenseAgreementHash` (values in this file); ship through the pipeline; verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the acceptance hash, redeploy, observe, restore. <!-- TODO(infra): pick the spare module and record its fingerprint + hash here -->
+- Enable a spare `.modl` from `third-party-modules/` in `services/modules.json` with `certFingerprint` + `licenseAgreementHash` (values below); ship through the pipeline; verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the acceptance hash, redeploy, observe, restore.
+
+  The spare module is **Embr Periscope** (it ships in `third-party-modules/` but is deliberately absent from `services/modules.json` and from the compose `ACCEPT_MODULE_*` lists). The entry you add:
+
+  ```json
+  "com.mussonindustrial.embr.periscope": {
+    "filename": "/third-party-modules/Embr-Periscope-Ignition83-0.12.0.modl",
+    "onStartup": "enabled",
+    "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
+    "licenseAgreementHash": 101444854
+  }
+  ```
 - **Gate:** module Running on dev, hands-free.
 
 ### Stretch (optional)

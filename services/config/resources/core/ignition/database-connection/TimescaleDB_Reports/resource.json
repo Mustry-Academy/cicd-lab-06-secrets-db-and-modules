@@ -1,0 +1,14 @@
+{
+  "scope": "A",
+  "description": "Read-only reporting connection (reporting user)",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "config.json"
+  ],
+  "attributes": {
+    "uuid": "6c35f8b0-6ffa-488f-a711-9b69682ed298",
+    "enabled": true
+  }
+}

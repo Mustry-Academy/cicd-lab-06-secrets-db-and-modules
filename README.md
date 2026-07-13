@@ -1,32 +1,17 @@
-# Lab 06 — Multi-gateway deployments & environment promotion
+# Lab 06 — Secrets, database migrations, modules & JARs
 
 Day 4 (morning) of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
-<!-- TODO(instructors): lab 04's README calls multi-gateway "Block D" while lab 05 claims blocks C+D.
-     Decide the canonical block letters for Day 4 morning (this README assumes "Blocks E and F") and
-     fix the cross-references in labs 04/05. -->
 
-> Widen the pipeline from Day 3 into a real promotion flow: **local → dev → test → prod**. One image is built once, then *promoted* stage by stage — automatically to dev, on a release branch to test, and through a **human approval gate** to prod. Along the way you take explicit control of **what differs per environment** using Ignition 8.3 config scopes (`-Dignition.config.mode`), so a single artifact carries every environment's configuration and each gateway picks its own at boot.
+> Four things every real Ignition deployment carries that the pipeline so far doesn't handle: **secrets**, the **database schema**, **third-party modules** and **JAR files**. You move the database passwords out of Git and onto the secrets ladder (env var → file-based secret → Ignition 8.3 **referenced secret**), ship a schema change as a **golang-migrate up/down pair** the pipeline applies *before* the screens that need it, and deploy a `.modl` with headless license acceptance — so a fresh gateway boots complete with no hands on it.
 
-This lab builds directly on [Lab 04 (file-based deploy)](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) and [Lab 05 (image-based deploy)](https://github.com/mustry-academy/cicd-lab-05-ignition-image-based-deploy). Both of those ended at a two-stage dev → prod story on a single machine. Real plants have more gateways than that — an acceptance/test tier, multiple production lines or sites, edge boxes — and the interesting questions all live in the gaps between them: *what promotes a build from one stage to the next, and what is allowed to differ between two gateways running "the same" release?*
-
-## What changes from Lab 05
-
-| | Lab 05 (image-based) | Lab 06 (multi-gateway) |
-|---|---|---|
-| Stages | local → dev → prod | local → dev → **test** → prod (+ optional prod-b fan-out) |
-| Promotion to prod | tag `v*` re-tags `:dev` | tag `v*` re-tags **`:test`** — prod only ever runs what test validated |
-| Gate before prod | none (optional stretch) | **required reviewer** on the `lab-gateway-prod` environment |
-| Per-env config | shipped silently (`loc`/`dev`/`prd` scopes existed but we never talked about them) | **taught explicitly** — you build the `tst` scope overlay yourself |
-| Fleet | one prod gateway | matrix deploy to N gateways (stretch) |
-
-The artifact and the delivery mechanism are unchanged from Lab 05: a versioned Docker image, deployed by pull + recreate. What's new is everything *around* it.
+This lab reuses Lab 04's file-based deploy stack (three gateways, bundled self-hosted runner, `docker cp` + hot scan). What's new is everything the config files *can't* say: password values, schema state, module binaries.
 
 ## Prerequisites
 
-- A fork of this repo, **with Actions enabled** (forks ship with workflows disabled — open the *Actions* tab and enable them).
-- A GitHub Personal Access Token with `repo` scope in `.env` as `RUNNER_GITHUB_PAT` (the bundled runner auto-registers against your fork).
-- **≥ 10 GB free RAM for Docker** — four Ignition gateways at 1 GB each (five with the fan-out stretch), plus TimescaleDB, the runner, and Docker overhead. <!-- [VERIFY] measure the real footprint once the compose stack exists; 4 gateways may need the memory limits lowered to fit 8 GB machines -->
-- _Background:_ [Lab 05](https://github.com/mustry-academy/cicd-lab-05-ignition-image-based-deploy) — this lab reuses its Dockerfile, GHCR flow, and Git Flow branching. Lab 06 stands alone technically (setup brings up a fresh stack), but the *concepts* of build-once/promote-many are assumed.
+- A fork of this repo, **with Actions enabled** — the warm-up, Parts 1C–1D and 2B are pipeline work (same setup as Lab 04)
+- The [GitHub CLI](https://cli.github.com/) (`gh`), authenticated (`gh auth status`) — `setup.sh` uses it to mint the runner's short-lived registration token; no Personal Access Token to create or store
+- **≥ 8 GB free RAM for Docker** — three Ignition gateways each cap at 1 GB, plus TimescaleDB, the runner, and the usual Docker Desktop overhead
+- _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) — this lab reuses its stack and deploy mechanics; the config-scope overlays (`loc`/`dev`/`prd`) it shipped silently become load-bearing here
 
 ## Quick start
 
@@ -34,137 +19,117 @@ The artifact and the delivery mechanism are unchanged from Lab 05: a versioned D
 gh repo clone mustry-academy/cicd-lab-06-multi-gateway-deploy
 cd cicd-lab-06-multi-gateway-deploy
 cp .env.example .env
-scripts/setup.sh    # brings up the stack, waits for the gateways, prints credentials
+scripts/setup.sh       # brings up the stack, waits for all three gateways, prints credentials
+scripts/validate.sh    # must be green before you start the lab
 ```
 
-Once setup finishes you have **four** Ignition gateways (five with `--profile fanout`):
+Once setup finishes you have three Ignition gateways and a TimescaleDB:
 
-| Gateway | URL | Config scope | What runs there |
-|---|---|---|---|
-| `local` | http://localhost:8088 | `loc` | Bind-mounted from `./projects/` + `./services/config/` — your **authoring** gateway. |
-| `dev` | http://localhost:8089 | `dev` | The image `deploy.yml` builds on push to **`develop`**. |
-| `prod` | http://localhost:8090 | `prd` | The image `release.yml` promotes on tag `v*` — **after a human approves**. |
-| `test` | http://localhost:8091 | `tst` | The image `promote.yml` re-tags from `:dev` on push to **`release/*`**. |
-| `prod-b` | http://localhost:8092 | `prd` | Optional fan-out target (`docker compose --profile fanout up -d`). Stretch only. |
+| Service | URL | What it is |
+|---|---|---|
+| `local` | http://localhost:8088 | Your working gateway — bind-mounted from `./projects/` + `./services/config/` |
+| `dev` | http://localhost:8089 | Empty until `deploy.yml` runs (push to `main`, or manual dispatch) — deployed files visible under `./gateways/dev/` |
+| `prod` | http://localhost:8090 | Same, populated by a manual `deploy.yml` run with `target=prod` |
+| `timescaledb` | localhost:5432 | Databases `ignition_loc` / `ignition_dev` / `ignition_prd`; logins `ignition` (r/w) and `reporting` (read-only) |
 
-<!-- TODO(instructors): port layout keeps dev=8089/prod=8090 for muscle-memory continuity with labs 04/05,
-     which puts test at 8091 (out of pipeline order). If you prefer pipeline order
-     (dev 8089, test 8090, prod 8091), renumber here, in the compose file, and in both slide decks. -->
+Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_PROD`, default `admin / password`).
 
-Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_DEV/_TEST/_PROD`, default `admin / lab06password`).
+> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and entirely legal for development.
 
-> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and legal for development. dev/test/prod are recreated from a fresh image on each deploy, so their trial clocks reset on deploy too.
-
-> **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) *(TODO — not written yet)*. Before opening a PR, run `scripts/validate.sh` (mirrors CI).
+> **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md). Before opening a PR, run `scripts/validate.sh` (JSON / `.deployignore` / secret scan).
 
 ## Lab structure
 
-| Part | Topic | Exercise |
-|---|---|---|
-| 1 (Block E) | Stand up the test stage & promote through gates | [`exercises/lab.md`](./exercises/lab.md) |
-| 2 (Block F) | Configuration options explored — parameterize per environment | [`exercises/lab.md`](./exercises/lab.md) |
+The lab is a warm-up plus three parts — [`exercises/lab.md`](./exercises/lab.md) is the source of truth, [`slides/assignment.html`](./slides/assignment.html) mirrors it:
 
-Reference reading sits alongside: [`docs/multi-gateway-promotion-pattern.md`](./docs/multi-gateway-promotion-pattern.md).
+| Part | Topic | Gate |
+|---|---|---|
+| Warm-up | Deploy to develop and prod; find both db-connections **Faulted** while the pipeline is green | the diagnosis question |
+| 1 (±30 min) | Passwords → secret files → file-type secret provider → **referenced secrets**; fix develop through a full PR → pipeline deploy | both connections Valid on develop, fixed by the pipeline |
+| 2 (±20 min) | A schema change as a golang-migrate `0002` up/down pair; `deploy.yml` migrates dev **before** it ships | green run: migrate → ship → scan → verify |
+| 3 (±10 min) | A spare `.modl` deployed with headless license/cert acceptance in `services/modules.json` | module **Running** on dev, hands-free |
+
+Reference reading: [`docs/secrets-management.md`](./docs/secrets-management.md) and [`db-migration/MIGRATIONS.md`](./db-migration/MIGRATIONS.md).
 
 ## Repo layout
 
 ```
 cicd-lab-06-multi-gateway-deploy/
 ├── README.md
-├── Dockerfile                          ← same shape as Lab 05: projects + config + modules baked in   [TODO]
-├── .dockerignore                                                                                      [TODO]
-├── docker-compose.yaml                 ← local/dev/test/prod gateways (+prod-b profile) + TimescaleDB
-│                                          + bundled self-hosted runner                                [TODO]
-├── .env.example                                                                                       [TODO]
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                      ← PR validation (JSON, hadolint, actionlint, build smoke test) [TODO]
-│       ├── deploy.yml                  ← push to develop → build+push image → recreate DEV            [TODO]
-│       ├── promote.yml                 ← push to release/* → re-tag :dev → :test → recreate TEST      [TODO]
-│       └── release.yml                 ← tag v* → re-tag :test → :vX.Y.Z + :prod → recreate PROD
-│                                          (waits on the lab-gateway-prod approval gate)               [TODO]
-├── exercises/
-│   └── lab.md                          ← the full lab: warm-up, Part 1 (promotion), Part 2 (config)
-├── docs/
-│   ├── multi-gateway-promotion-pattern.md  ← reference reading (seeded)
-│   └── TROUBLESHOOTING.md                                                                             [TODO]
-├── instructor-notes/                                                                                  [TODO]
+├── docker-compose.yaml                 ← three gateways + TimescaleDB + runner. Passwords are
+│                                          still env vars — Part 1A moves them to file secrets
+├── .env.example                        ← copy to .env before running
+├── .deployignore                       ← what NOT to copy onto dev/prod gateways (incl. secrets/)
+├── secrets/                            ← file-based secrets; only *.example files are tracked
+├── db-init/                            ← BOOTSTRAP: creates env databases + the reporting login
+│                                          (runs once, on first DB volume init — never again)
+├── db-migration/
+│   ├── MIGRATIONS.md                   ← the two rules the tool won't enforce for you
+│   └── migrate/                        ← numbered golang-migrate pairs; 0002 is yours (Part 2)
+├── .github/workflows/
+│   ├── ci.yml                          ← PR validation: linters + JSON checks + secret scan
+│   └── deploy.yml                      ← push to main → dev; manual dispatch → dev or prod.
+│                                          You add the Materialize-secrets (1C) and Migrate (2B) steps
+├── exercises/lab.md                    ← the lab
+├── docs/                               ← reference reading + troubleshooting
+├── instructor-notes/                   ← answer key (read after solo work)
 ├── scripts/
-│   ├── setup.sh / teardown.sh / lib.sh                                                                [TODO]
-│   ├── build-image.sh                  ← local mirror of the CI build                                 [TODO]
-│   ├── promote-image.sh                ← local mirror of the promote step (re-tag, no rebuild)        [TODO]
-│   ├── deploy-image.sh                 ← recreate a named gateway from an image                       [TODO]
-│   └── validate.sh                                                                                    [TODO]
-├── db-init/
-│   └── 01-create-env-databases.sql     ← ignition_loc/_dev/_tst/_prd (+_prd_b?)                       [TODO]
-├── projects/example-project/           ← copy from Lab 05                                             [TODO]
+│   ├── setup.sh / teardown.sh / lib.sh / scan.sh   ← stack management (from Lab 04)
+│   ├── migrate.sh                      ← golang-migrate in Docker (up / down / version, --database)
+│   └── validate.sh                     ← local mirror of ci.yml, incl. the secret scan
+├── projects/                           ← Perspective projects (bind-mounted into `local`)
+├── gateways/                           ← dev/prod gateway state (gitignored bind mounts)
 ├── services/
-│   ├── config/resources/{external,core,loc,dev,prd}/  ← copy from Lab 05; students BUILD tst/        [TODO]
-│   └── modules.json                                                                                   [TODO]
-└── third-party-modules/                ← copy from Lab 05                                             [TODO]
+│   ├── config/                         ← gateway config; the two db-connections live under
+│   │                                      resources/{core,loc,dev,prd}/ignition/database-connection/
+│   └── modules.json                    ← module enablement manifest (Part 3 adds the spare)
+└── third-party-modules/                ← bundled .modl binaries — incl. the spare one Part 3 deploys
 ```
 
-## The promotion pipeline
+## The two database connections (the warm-up's broken state)
 
-```
-feature/* ─PR→ develop ──push──▶ deploy.yml  ── build+push :sha :dev ──▶ DEV   (automatic)
-                  │
-                  └── release/1.x ──push──▶ promote.yml ── re-tag :dev → :test ──▶ TEST  (release branch = freeze)
-                          │
-                          └─PR→ main ──tag vX.Y.Z──▶ release.yml ── re-tag :test → :vX.Y.Z + :prod ──▶ PROD
-                                                                     ▲
-                                                        required reviewer approves here
-```
+The local gateway has two connections to the shared TimescaleDB, and they are **deliberately seeded broken for dev/prod**:
 
-Three invariants the lab keeps hammering:
+| Connection | Login | Target | Per-env override? |
+|---|---|---|---|
+| `TimescaleDB` | `ignition` (r/w) | `ignition_<env>` | `loc`/`dev`/`prd` overrides exist — the pattern to copy |
+| `TimescaleDB_Reports` | `reporting` (read-only) | `ignition_loc` | **core only** — develop inherits the wrong database (Part 1C fixes this) |
 
-1. **Build once.** The image is built exactly once, on the push to `develop`. Every later stage is a server-side re-tag (`docker buildx imagetools create`) — the digest never changes.
-2. **Promote only from the stage below.** Prod runs what test validated (`:test`), never what dev happens to be running at tag time.
-3. **One artifact, every environment's config.** The image contains *all* scope overlays (`loc`, `dev`, `tst`, `prd`); the boot flag `-Dignition.config.mode=<scope>` decides which one a gateway resolves. No per-environment rebuilds, no hand-edits after deploy.
-
-## Configuration scopes (the Block F topic)
-
-Ignition 8.3 organizes gateway config as `config/resources/<scope>/…`, with scopes forming an inheritance chain declared in each scope's `config-mode.json`:
-
-```
-external  →  core  →  { loc | dev | tst | prd }
-(defaults)   (shared, versioned)   (per-env overlays, versioned)
-```
-
-Labs 04 and 05 shipped `loc`/`dev`/`prd` overlays without ever discussing them — the dev gateway pointed at `ignition_dev` and prod at `ignition_prd` "by magic". In Part 2 you build the `tst` overlay yourself and classify every configuration knob into one of three buckets:
-
-| Bucket | Example | Where it lives |
-|---|---|---|
-| Same everywhere | historian provider settings, identity provider, tag providers | `core/` — in git |
-| Differs per env, not secret | DB `connectURL`, OPC UA endpoint, gateway name | scope overlay (`dev/`, `tst/`, `prd/`) — in git |
-| Secret | DB passwords, API keys, cloud credentials | **not in git** — Day 4 afternoon (Lab 07) |
+Both passwords are **embedded** secrets in the committed config, encrypted under **custom secrets-management keys** that are committed for the local gateway (`services/config/ignition/keys/` + `IGNITION_ROOT_KEY_PASSWORD` in the compose file) and deliberately excluded from the deploy payload (`.deployignore`). So your local gateway decrypts them, and develop/prod fault with `Unable to decrypt ciphertext` — a green pipeline and broken connections, which is the warm-up's whole point: a config-only deploy cannot carry password values (they must never be in Git) nor the per-environment database target. Part 1 replaces the whole construction with **referenced** secrets from a file-type provider, and the deploy workflow materializes the files from GitHub environment secrets. (Committing key files is a real-world anti-pattern — that's the seed being deliberately naive; see `docs/secrets-management.md`.)
 
 ## The CI/CD workflows
 
-| File | Trigger | Runner(s) | Purpose |
+| File | Trigger | Runner | Purpose |
 |---|---|---|---|
-| `ci.yml` | PR to `develop` or `main` | `ubuntu-latest` | Validate JSON, hadolint, actionlint, no-push image build. |
-| `deploy.yml` | Push to `develop` | build: `ubuntu-latest` · deploy: `[self-hosted, lab06]` | Build + push `:sha-<short>` + `:dev`, recreate **dev**. |
-| `promote.yml` | Push to `release/**`, manual | promote: `ubuntu-latest` · deploy: `[self-hosted, lab06]` | Re-tag `:dev` → `:test` (**no rebuild**), recreate **test**. |
-| `release.yml` | Tag `v*` (on `main`), manual | promote: `ubuntu-latest` · deploy: `[self-hosted, lab06]` | Re-tag `:test` → `:vX.Y.Z` + `:prod` (**no rebuild**), recreate **prod** — gated by `lab-gateway-prod` required reviewers. Manual dispatch with an older tag = rollback. |
+| [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` (free) | Linters, JSON validity, `.deployignore` syntax, **secret scan**. |
+| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (deploy paths only); manual dispatch with `target: dev\|prod` | `[self-hosted, lab06]` | File-based deploy via `docker cp` + hot scan. Ships secret files (once your 1C step materializes them) and the module manifest (restarting the gateway only when it changed). |
 
-GitHub **environments** used: `lab-gateway-dev`, `lab-gateway-test`, `lab-gateway-prod`. The prod one carries the required-reviewer gate (set up in Part 1 — no workflow change needed). GHCR auth is the built-in `GITHUB_TOKEN`, publishing to `ghcr.io/<your-fork-owner>/cicd-lab-06-ignition`, exactly like Lab 05.
+Both deploy targets need:
 
-## TODO — infrastructure still to build
+- The bundled self-hosted runner (`github-runner` service in `docker-compose.yaml`) registered against your fork with the `lab06` label — `setup.sh` handles registration via `gh`.
+- A GitHub **environment** per target with the right secrets + variables:
 
-This repo currently contains the README, exercises outline, seed doc, and slide decks. Still to build before the course runs (mostly copy-and-extend from Lab 05):
+| Scope | Name | Type | Purpose |
+|---|---|---|---|
+| Environment `lab-gateway-dev` | `IGNITION_API_KEY` | Secret | Token with Project Scan + Config Scan permission (the pre-provisioned `cicd` token from `.env.example` works) |
+| Environment `lab-gateway-dev` | `POSTGRES_PASSWORD`, `REPORTING_PASSWORD` | Secrets | **You add these in Part 1C** — the Materialize step turns them into secret files on the dev host |
+| Environment `lab-gateway-dev` | `IGNITION_URL`, `IGNITION_CONTAINER` | Variables (optional) | Default to `http://gateway-dev:8088` / `lab06-gateway-dev` (bundled-runner case) |
+| Environment `lab-gateway-prod` | (same set) | | Defaults: `http://gateway-prod:8088` / `lab06-gateway-prod` |
 
-- [ ] `docker-compose.yaml` — Lab 05's file + `ignition-test` service (port 8091, `-Dignition.config.mode=tst`, `IGNITION_TEST_IMAGE` var) + `ignition-prod-b` under a `fanout` profile (port 8092) + runner labels `self-hosted,lab06`.
-- [ ] `db-init/01-create-env-databases.sql` — add `ignition_tst`. Decide whether prod-b shares `ignition_prd` or gets its own DB.
-- [ ] `Dockerfile`, `.dockerignore`, `.env.example`, `.gitattributes` — copy from Lab 05, rename lab05→lab06.
-- [ ] Workflows: `ci.yml` / `deploy.yml` (copy), `promote.yml` (new — `release/**` trigger, re-tag `:dev`→`:test`), `release.yml` (change promotion source from `:dev` to `:test`; keep `workflow_dispatch` rollback input). Stretch: a `matrix` deploy job over `[prod, prod-b]` with `max-parallel: 1`.
-- [ ] `scripts/` — `setup.sh`/`teardown.sh`/`lib.sh`/`validate.sh` (copy + extend to wait for 4 gateways), `promote-image.sh` (new: local re-tag mirror), `deploy-image.sh` (accept `test`/`prod-b` targets).
-- [ ] `services/config/resources/` — copy from Lab 05 **without** a `tst/` folder (students create it in Part 2). Ship a `tst/` reference in `instructor-notes/`.
-- [ ] `projects/example-project/`, `third-party-modules/`, `services/modules.json` — copy from Lab 05. Consider adding an env-indicator Perspective view that displays the gateway's config mode / DB name so promotion is *visible* in the browser. <!-- [VERIFY] nicest way to surface the active config mode in a view — system property? tag? -->
-- [ ] `instructor-notes/` — answer keys for Part 1 and Part 2 (incl. the finished `tst/` overlay and the config-inventory classification).
-- [ ] `docs/TROUBLESHOOTING.md` — Lab 05's plus: approval gate never prompts (reviewer not set / wrong environment name), test gateway boots with core config only (missing/bad `config-mode.json` parent), promote fires from the wrong branch pattern.
-- [ ] Verify RAM guidance with the real stack; consider dropping per-gateway memory limits so the lab fits 8 GB machines.
+## Database migrations
+
+`db-init/` is bootstrap; `db-migration/migrate/` is deployment. Day-to-day:
+
+```bash
+scripts/migrate.sh up                           # apply pending migrations on ignition_loc
+scripts/migrate.sh up --database ignition_dev   # same, against dev (what your 2B step runs)
+scripts/migrate.sh version                      # current position + dirty flag
+docker exec lab06-timescaledb psql -U ignition -d ignition_loc \
+  -c 'SELECT * FROM schema_migrations;'         # read the ledger directly
+```
+
+See [`db-migration/MIGRATIONS.md`](./db-migration/MIGRATIONS.md) for the rules ("always pairs", "never edit a deployed migration").
 
 ## Licence
 
-Apache 2.0 — see `LICENSE`. <!-- TODO: copy LICENSE file from lab 05 -->
+Apache 2.0 — see [`LICENSE`](./LICENSE).

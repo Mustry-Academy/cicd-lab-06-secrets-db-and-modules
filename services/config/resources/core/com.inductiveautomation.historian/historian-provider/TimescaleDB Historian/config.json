@@ -1,0 +1,23 @@
+{
+  "profile": {
+    "type": "timescaledb-historian"
+  },
+  "settings": {
+    "batchIntervalMs": 5000,
+    "batchSize": 100,
+    "debugLogging": false,
+    "jdbcUrl": "jdbc:postgresql://timescaledb:5432/ignition?currentSchema=public",
+    "password": {
+      "type": "Embedded",
+      "data": {
+        "ciphertext": "fc0QDQT3kmtLcVvC-AYAVKAIDA",
+        "encrypted_key": "5tCX73M2QMpcgqHPgkm6dbwOGf-_zIw6mH2pXQbTHzlNTsaW4rxZwQ",
+        "iv": "Bq8Y4ueg5LG_Cx0c",
+        "protected": "eyJhbGciOiJBMjU2S1ciLCJlbmMiOiJBMjU2R0NNIiwiaWF0IjoxNzgzOTQ2MDc3LCJraWQiOiIyYmI1YmVkOC0xN2FhLTQyZDktOGJhMC0zMzFjYmQ4ZDk3MzciLCJ6aXAiOiJERUYifQ",
+        "tag": "cftXp06yEhSfbG2hxyXhfg"
+      }
+    },
+    "timeoutMs": 5000,
+    "username": "ignition"
+  }
+}
