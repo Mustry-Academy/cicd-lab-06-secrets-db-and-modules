@@ -132,18 +132,20 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and dev's ledger at version 2.
 
 ### Part 3 — deploy a third-party module (±10 min)
-- Enable a spare `.modl` from `third-party-modules/` in `services/modules.json` with `certFingerprint` + `licenseAgreementHash` (values below); ship through the pipeline; verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the acceptance hash, redeploy, observe, restore.
+- Enable the spare `.modl` in `services/modules.json`, ship it through the pipeline, and verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the `licenseAgreementHash`, redeploy, observe, restore.
 
-  The spare module is **Embr Periscope** (it ships in `third-party-modules/` but is deliberately absent from `services/modules.json` and from the compose `ACCEPT_MODULE_*` lists). The entry you add:
+  The spare module is **Embr Periscope**. Its manifest entry ships `"onStartup": "disabled"` — but with the `certFingerprint` and `licenseAgreementHash` already recorded:
 
   ```json
   "com.mussonindustrial.embr.periscope": {
     "filename": "/third-party-modules/Embr-Periscope-Ignition83-0.12.0.modl",
-    "onStartup": "enabled",
+    "onStartup": "disabled",          ← flip this to "enabled"
     "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
     "licenseAgreementHash": 101444854
   }
   ```
+
+  Those two acceptance fields are the whole point: they are what lets a gateway install the module **without a human clicking an install dialog**. The negative test shows what happens without them — a gateway that boots with an enabled-but-unaccepted module parks itself at the commissioning screen and waits for a hand. (That's also why the seed ships them even for the disabled module: `GATEWAY_MODULES_ENABLED` in the compose file lists Periscope, and an unaccepted entry would trap every *fresh* gateway in commissioning before the lab even starts.)
 - **Gate:** module Running on dev, hands-free.
 
 ### Stretch (optional)
