@@ -146,7 +146,12 @@ jobs:
       # the run before anything ships).
 
       - name: Migrate database
-        run: scripts/migrate.sh up --database ignition_dev
+        run: |
+          case "$DEPLOY_TARGET" in
+            prod) db=ignition_prd ;;
+            *)    db=ignition_dev ;;
+          esac
+          scripts/migrate.sh up --database "$db"
 
       - name: Ship module manifest and third-party modules (restart if changed)
         # Part 3 of the lab: the module binary and its manifest entry are
