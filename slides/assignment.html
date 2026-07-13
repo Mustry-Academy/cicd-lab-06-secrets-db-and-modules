@@ -194,9 +194,6 @@ body{
     <div class="sechead"><span class="num">READ FIRST</span><div><div class="title">How this works</div></div></div>
     <ul class="checks" style="max-width:940px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Share your screen</b> in your breakout room, and we'll drop in where it's useful.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The exercise file is the source of truth:</b> <span class="inlinecode">exercises/lab.md</span>. These slides are the map, not the territory.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Pre-flight:</b> <span class="inlinecode">cp .env.example .env</span> → <span class="inlinecode">scripts/setup.sh</span> → <span class="inlinecode">scripts/validate.sh</span> green before you start.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The warm-up, Parts 1C-1D and 2B need your fork with Actions enabled</b> (same setup as Lab 04): the pipeline is what deploys, writes the secret files and runs the migrations.</span></li>
       <li><span class="ck bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span><span><b>Never commit a real secret today.</b> If <span class="inlinecode">git status</span> ever lists a file under <span class="inlinecode">secrets/</span> that isn't a <span class="inlinecode">*.example</span>, stop and fix your <span class="inlinecode">.gitignore</span> first.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stuck?</b> <span class="inlinecode">docs/TROUBLESHOOTING.md</span> first, then say so in the room.</span></li>
     </ul>
@@ -215,7 +212,7 @@ body{
     <div class="stage">The assignment · the plan</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">One warm-up together, then three parts solo</div><div class="lead">The warm-up (a full deploy to develop and prod, and what it doesn't fix) we do together at the top of the hour. Then each part matches a part of the teaching.</div></div></div>
+    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">One warm-up together, then three parts solo</div><div class="lead">The warm-up consists of a full  deploy to develop and prod. Then each solo part matches a part of the teaching.</div></div></div>
     <div class="pmap">
       <div class="pcard p1">
         <div class="pn">PART 1 · SOLO · ±30 MIN</div>
@@ -244,7 +241,49 @@ body{
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Warm-up → Part 1 → Part 2 → Part 3</span></div>
 </section>
 
-<!-- 4 · WARM-UP · DEPLOY TO DEVELOP AND PROD -->
+<!-- 4 · SETUP · FORK & CLONE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Before you start · setup</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: fork this lab, clone it, turn Actions on</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Check <span class="inlinecode">gh auth status</span> while you're at it — <span class="inlinecode">setup.sh</span> uses it to mint the runner's registration token; no PAT today.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and change <b>one line only</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>. Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
+cd ~/mustry-academy
+
+<span class="cm"># 2: fork to your account + clone your fork</span>
+gh repo fork mustry-academy/cicd-lab-06-multi-gateway-deploy --clone
+<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
+git clone git@github.com:&lt;your-username&gt;/cicd-lab-06-multi-gateway-deploy.git
+cd cicd-lab-06-multi-gateway-deploy
+
+<span class="cm"># 3: enable Actions on github.com — your fork's Actions tab</span>
+
+<span class="cm"># 4: copy the env file, change ONE line only</span>
+cp .env.example .env
+<span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span>
+
+<span class="cm"># 5: origin → YOUR username? good. Then VS Code + the stack</span>
+git remote -v
+code .
+scripts/setup.sh          <span class="cm"># three gateways + TimescaleDB + runner</span></pre></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup · fork &amp; clone → enable Actions → .env → setup.sh</span></div>
+</section>
+
+<!-- 5 · WARM-UP · DEPLOY TO DEVELOP AND PROD -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -254,7 +293,7 @@ body{
     <div class="sechead"><span class="num warm">WARM-UP</span><div><div class="title">Deploy to develop and prod, and check the database connections</div><div class="lead">Before you change anything, run the pipeline end to end. It comes back green, and yet develop's database connections are broken. That gap is exactly what Part 1 fixes.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Pre-flight:</b> <span class="inlinecode">cp .env.example .env</span> → <span class="inlinecode">scripts/setup.sh</span> → <span class="inlinecode">scripts/validate.sh</span> green.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Pre-flight:</b> <span class="inlinecode">scripts/validate.sh</span> must be <b>green</b> before you start — it's the same battery <span class="inlinecode">ci.yml</span> runs on every PR (JSON checks, <span class="inlinecode">.deployignore</span>, the secret scan), so a clean checkout that fails here means a setup problem, not a you problem.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Deploy to develop:</b> in your fork, Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b>. Watch every step go green. Then do the same for prod.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the develop gateway:</b> <i>Config → Databases → Connections</i>. Both connections are <b>Faulted</b>: <span class="inlinecode">TimescaleDB</span> and <span class="inlinecode">TimescaleDB_Reports</span>.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Check prod:</b> same picture. Your local gateway meanwhile is fine.</div></div>

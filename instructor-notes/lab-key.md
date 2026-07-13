@@ -48,32 +48,69 @@ the gateway parses `data` strictly as a flattened JWE), and no REST endpoint
 for it — mint the JWE, or set the value through the gateway UI on a gateway
 that holds the committed keys and commit the rewritten config.json.
 
-### A2. Verify the deploy pipeline end-to-end on a fork (STILL OPEN)
+### A2. Deploy pipeline — VERIFIED end-to-end (2026-07-13, run on the
+### upstream repo with the bundled runner)
 
-- Warm-up: `deploy.yml` (dispatch, dev then prod) green with the seeded repo.
-  (The ship/scan mechanics and the resulting Faulted state were verified by
-  running the same steps manually; the workflow itself needs a fork run.)
-- 1C/1D: add the two GitHub environment secrets, add the Materialize step at
-  the marked insertion point, confirm the pre-wired "Ship secret files" step
-  lands them at `/run/secrets/` and the connections go Valid after the scan
-  (assumption: the file-type provider re-reads files on demand and the
-  faulted connection re-validates without a gateway restart — if not, add a
-  conditional restart to that step).
-- 2B: the Migrate step at its insertion point
-  (`run: scripts/migrate.sh up --database ignition_dev`). `migrate.sh` itself
-  is verified (up / down / version / idempotency / `--database`, and it
-  avoids bind mounts precisely so it works from the containerized runner) —
-  the in-runner execution still needs a fork run.
-- Part 3: modules.json change → deploy → gateway restart (the shipped step
-  restarts only when the manifest changed) → Periscope Running on dev.
-  Verify the negative test (hash removed → fresh boot quarantines the
-  module). Note the gateway auto-registers any .modl it finds in the
-  external-modules folder as `"onStartup": "disabled"` — that's why the
-  committed modules.json already carries a disabled Periscope entry;
-  students flip it to enabled and add the fingerprint + hash.
+All four flows ran green through the actual GitHub Actions pipeline:
 
-### A3. Smaller checks
+- **Warm-up**: `deploy.yml` green to dev (push + dispatch) and prod
+  (dispatch, `target=prod`); both gateways' connections Faulted with
+  `Unable to decrypt ciphertext`; local Valid.
+- **1C**: Materialize + the pre-wired "Ship secret files" step land
+  `postgres_password` / `reporting_password` at `/run/secrets/` with mode
+  600. (Connections-go-Valid still depends on 1B's provider, which is UI
+  work — see A4.)
+- **2B**: `scripts/migrate.sh up --database ignition_dev` runs from inside
+  the containerized runner; dev's `schema_migrations` reached version 2
+  before the ship steps.
+- **Part 3**: manifest change → detected → gateway restart →
+  `Starting up module 'com.mussonindustrial.embr.periscope'` → Running.
+- **ci.yml**: all three jobs (Lint incl. ign-lint, Validate, Secret scan)
+  green on PR #2.
 
+The runnable answer key lives on the **`rehearsal/lab-solutions`** branch
+(PR #2, draft, never to be merged): the Materialize + Migrate steps at their
+insertion points, the `TimescaleDB_Reports` dev override, the `0002` pair,
+and the enabled Periscope entry. To re-verify any flow, dispatch `deploy.yml`
+from that branch with `target=dev`.
+
+### A3. Module-manifest behaviour (all verified live — read before editing
+### Part 3)
+
+- **`GATEWAY_MODULES_ENABLED` force-disables absent modules on every boot**,
+  silently, regardless of modules.json. The spare module must stay in that
+  compose list; what Part 3 toggles is `onStartup` in the manifest.
+- **An env-enabled module without accepted license terms parks the gateway
+  at the commissioning screen** (`needs_commissioning`, web UI → welcome,
+  scan API → 400) — on a FRESH volume too. That's why the seed ships
+  Periscope's `certFingerprint` + `licenseAgreementHash` with
+  `onStartup: "disabled"`. It is also exactly what the Part 3 negative test
+  demonstrates: remove the hash, redeploy, and dev parks until the
+  acceptance is restored (a redeploy with the hash back un-parks it).
+- **Enablement is sticky**: once a gateway has run a module, flipping the
+  manifest back to `disabled` does NOT unload it (the internal DB wins and
+  rewrites the file). Removing acceptance DOES bite. To truly reset a
+  gateway's module state, wipe its data volume and re-run `setup.sh`.
+- The gateway auto-registers any `.modl` it finds in the external-modules
+  folder into its manifest, and rewrites the mounted `modules.json` at will
+  — which is why dev/prod get their own copies under `gateways/<gw>/`.
+- **`StatusPing` says `"state":"RUNNING"` even while commissioning** (the
+  detail field carries `"COMMISSIONING"`); a green health check does not
+  mean the API is up. The deploy's scan step (HTTP 400) is what actually
+  catches a parked gateway.
+
+### A4. Smaller checks / still open
+
+- **1B (LabSecrets provider) is created via the gateway UI** — no REST or
+  file shape verified for it yet. The first UI run writes the resource into
+  `services/config/` via the bind mount; capture and note the shape then.
+- The bundled runner loses its registration if its container is recreated
+  without a fresh token (plain `docker compose up -d` after a config
+  change): jobs queue forever. Re-run `scripts/setup.sh` — it mints a token
+  and re-registers.
+- GitHub Actions had transient job-setup failures during the rehearsal
+  ("Bad Gateway" / "Failed to resolve action download info") —
+  `gh run rerun <id> --failed` cleared them; don't chase ghosts.
 - Students with an EXISTING lab04-era database volume: the lab assumes a
   fresh `lab06` compose project (fresh volumes) — `db-init` only runs on
   first init. Say it out loud at the start.
