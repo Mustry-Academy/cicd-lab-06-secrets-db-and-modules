@@ -227,6 +227,13 @@ seed_gateway_state() {
             cp "$manifest_src" "$core_dst/config-mode.json"
             cp -R "$token_src" "$core_dst/ignition/"
         fi
+        # Per-gateway module manifest (see docker-compose.yaml): seed it from
+        # the repo's manifest so the first boot has one; from then on ONLY
+        # deploy.yml updates it. Must exist before compose up, or Docker
+        # turns the single-file bind mount into an empty directory.
+        if [ ! -f "$PROJECT_ROOT/gateways/$gw/modules.json" ]; then
+            cp "$PROJECT_ROOT/services/modules.json" "$PROJECT_ROOT/gateways/$gw/modules.json"
+        fi
     done
 }
 

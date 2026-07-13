@@ -140,10 +140,10 @@ jobs:
         # deployable state. Unlike projects/config, modules only load at BOOT,
         # so this step restarts the gateway — but only when the manifest
         # actually changed, so ordinary project deploys stay hot.
-        # Both container paths are bind-mounted from the host repo checkout
-        # (every gateway mounts the same ./services/modules.json and
-        # ./third-party-modules), so this docker cp writes through to all of
-        # them; each gateway picks the change up on its own next boot.
+        # The gateway's manifest is its own copy (bind-mounted from
+        # ./gateways/<target>/modules.json, seeded by setup.sh), so its hash
+        # is genuinely "what this gateway last booted with", not the repo
+        # working tree.
         run: |
           set -euo pipefail
           before="$(docker exec "$IGNITION_CONTAINER" md5sum "$GATEWAY_DATA_PATH/modules.json" 2>/dev/null | cut -d' ' -f1 || true)"

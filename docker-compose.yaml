@@ -151,7 +151,12 @@ services:
       # var/, certificates/) stays in the named volume above.
       - ./gateways/dev/projects:/usr/local/bin/ignition/data/projects
       - ./gateways/dev/config:/usr/local/bin/ignition/data/config
-      - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
+      # The module manifest is a PER-GATEWAY copy (seeded by setup.sh,
+      # updated by deploy.yml) — NOT the repo's services/modules.json, which
+      # only the local gateway mounts. If dev shared the working-tree file,
+      # a local edit would leak into dev's next boot without a deploy, and
+      # the deploy workflow couldn't tell "already deployed" from "changed".
+      - ./gateways/dev/modules.json:/usr/local/bin/ignition/data/modules.json
       - ./third-party-modules:/third-party-modules
     environment:
       <<: *ignition-env
@@ -189,7 +194,8 @@ services:
       # ./gateways/prod (gitignored, created by setup.sh).
       - ./gateways/prod/projects:/usr/local/bin/ignition/data/projects
       - ./gateways/prod/config:/usr/local/bin/ignition/data/config
-      - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
+      # Per-gateway manifest copy — same reasoning as dev.
+      - ./gateways/prod/modules.json:/usr/local/bin/ignition/data/modules.json
       - ./third-party-modules:/third-party-modules
     environment:
       <<: *ignition-env

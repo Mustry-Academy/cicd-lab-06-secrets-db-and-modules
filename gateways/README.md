@@ -6,12 +6,20 @@ directories, bind-mounted into their containers (see `docker-compose.yaml`):
 ```
 gateways/
 ├── dev/
-│   ├── projects/   ← what deploy.yml shipped (push to main)
-│   └── config/     ← gateway config, incl. what the deploy copied
+│   ├── projects/      ← what deploy.yml shipped (push to main)
+│   ├── config/        ← gateway config, incl. what the deploy copied
+│   └── modules.json   ← this gateway's module manifest (what it last booted with)
 └── prod/
-    ├── projects/   ← what deploy.yml shipped (dispatch, target=prod)
-    └── config/
+    ├── projects/      ← what deploy.yml shipped (dispatch, target=prod)
+    ├── config/
+    └── modules.json
 ```
+
+The `modules.json` copies are deliberately separate from the repo's
+`services/modules.json` (which only the **local** gateway mounts): dev/prod
+must run what was *deployed*, not what your working tree happens to contain.
+The deploy workflow updates them and restarts the gateway only when the
+manifest actually changed.
 
 `scripts/setup.sh` creates these subdirectories (and pre-seeds the `cicd` API
 token) before the gateways' first boot. Everything except this README is
