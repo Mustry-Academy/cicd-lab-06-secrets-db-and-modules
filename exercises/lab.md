@@ -139,18 +139,25 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **1C.** Build the fix for develop, in two halves: add the **dev
   deployment-mode override** for `TimescaleDB_Reports`
   (`…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json`,
-  connectURL → `ignition_dev`, copy the pattern from `TimescaleDB`), and add
-  `POSTGRES_PASSWORD` + `REPORTING_PASSWORD` as secrets on the `lab-gateway-dev`
-  environment plus the **Materialize secret files** step in `deploy.yml`
+  connectURL → `ignition_dev`) **and its `prd` twin** (connectURL →
+  `ignition_prd` — prod inherits the same core flaw; copy the pattern from
+  `TimescaleDB`, which has all three modes), and add
+  `POSTGRES_PASSWORD` + `REPORTING_PASSWORD` as secrets on **both** the
+  `lab-gateway-dev` and `lab-gateway-prod` environments plus the
+  **Materialize secret files** step in `deploy.yml`
   (umask 177 + `printf`, before `compose up`). Nothing is deployed yet.
 - **1D.** The full deploy moment, every station separately: **branch**
   (`feature/fix-dev-db-connections`) → **commit & push** (no secret values in
   the diff) → **open the PR** → **watch the PR validate** (`ci.yml` green) →
   **merge** → **watch the pipeline deploy** (materialize secrets → up → scan →
   verify) → **verify develop** (both connections Valid, `TimescaleDB_Reports`
-  on `ignition_dev`).
-- **Gate:** both connections Valid on develop, fixed by the pipeline and not by
-  hand, and you can narrate: GitHub secret → file → provider → reference.
+  on `ignition_dev`) → **promote to prod** (Actions → `deploy.yml` → Run
+  workflow → `target: prod` — same commit, same pipeline, different
+  environment) → **verify prod** (both Valid, `TimescaleDB_Reports` on
+  `ignition_prd`).
+- **Gate:** both connections Valid on develop AND prod, fixed by the pipeline
+  and not by hand, and you can narrate: GitHub secret → file → provider →
+  reference.
 
 ### Part 2 — ship a schema change as a migration (±20 min)
 - **2A.** Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and** `.down.sql`; apply with `scripts/migrate.sh up`; read `schema_migrations` (version 2, not dirty); re-run to see idempotency. Note: golang-migrate will NOT stop you editing an applied migration — that discipline is a written rule (the production repo's `docs/MIGRATIONS.md`), not a tool feature.

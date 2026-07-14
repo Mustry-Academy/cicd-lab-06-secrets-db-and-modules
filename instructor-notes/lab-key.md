@@ -160,8 +160,10 @@ exists in core** (the Reports connection's database target).
 - 1C: dev override at
   `services/config/resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json`
   (`connectURL` → `...5432/ignition_dev`, copy the TimescaleDB dev override
-  incl. its `resource.json`); GitHub env secrets `POSTGRES_PASSWORD` +
-  `REPORTING_PASSWORD` on `lab-gateway-dev`; Materialize step:
+  incl. its `resource.json`) plus the `prd` twin (`connectURL` →
+  `...5432/ignition_prd`); GitHub env secrets `POSTGRES_PASSWORD` +
+  `REPORTING_PASSWORD` on BOTH `lab-gateway-dev` and `lab-gateway-prod`;
+  Materialize step:
 
   ```yaml
   - name: Materialize secret files

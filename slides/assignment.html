@@ -227,8 +227,8 @@ body{
       <div class="pcard p1">
         <div class="pn">PART 1 · SOLO · ±30 MIN</div>
         <h4>Hook up a secret for the db-connection</h4>
-        <p>Two connections, two database users. Passwords become secret files, a file-based provider resolves them as referenced secrets, and a feature-branch PR ships the fix that makes develop's connections Valid.</p>
-        <div class="gate">gate → both connections Valid on develop, fixed by the pipeline</div>
+        <p>Two connections, two database users. Passwords become secret files, a file-based provider resolves them as referenced secrets, and a feature-branch PR ships the fix that makes develop's connections Valid — then the same commit promotes to prod.</p>
+        <div class="gate">gate → both connections Valid on develop + prod, fixed by the pipeline</div>
       </div>
       <div class="pcard p2">
         <div class="pn">PART 2 · SOLO · ±20 MIN</div>
@@ -347,7 +347,7 @@ TimescaleDB_Reports   <span class="red">Faulted</span></pre></div>
   <div class="body">
     <div class="eyebrow">Part 1 · solo · ±30 min · exercises/lab.md</div>
     <div class="title" style="color:#fff;max-width:26ch">Hook up a secret for the db-connection</div>
-    <p class="lead">The warm-up left both database connections Faulted on develop. Fix them the way our production setup runs: passwords as secret files, a file-based secret provider resolving them, and a full deploy that ships the fix.</p>
+    <p class="lead">The warm-up left both database connections Faulted on develop and production. Fix them the way our production setup runs: passwords as secret files, a file-based secret provider resolving them, and a full deploy that ships the fix.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1A:</b> both database passwords become <b>secret files</b> at <span class="mono" style="color:#dbe4f0">/run/secrets/</span>: two connections, two users, two files.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>1B:</b> a <b>file-based secret provider</b> on the gateway resolves them, and both connections point at <b>referenced secrets</b>.</span></li>
@@ -464,17 +464,27 @@ grep -r "$(cat secrets/reporting_password.txt)" \
     <div class="stage">Part 1 · C</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1C</span><div><div class="title">Build the fix for develop: dev deployment-mode override plus secret files from CI</div><div class="lead">Develop faults for two reasons, so the fix has two halves: point the reports connection at the right database with a <b>dev deployment-mode override</b> (the Lab 04 mechanism), and let the deploy workflow write the secret files.</div></div></div>
+    <div class="sechead"><span class="num">1C</span><div><div class="title">Build the fix for develop: dev deployment-mode override plus secret files from CI</div><div class="lead">Develop and prod have sat <b>Faulted since the warm-up deploy</b> — 1A and 1B only fixed your local gateway. They fault for two reasons, so the fix has two halves: point the reports connection at the right database with a <b>deployment-mode override</b> (the Lab 04 mechanism), and let the deploy workflow write the secret files.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Diagnose:</b> <span class="inlinecode">TimescaleDB_Reports</span> only exists in <span class="inlinecode">core</span>, so develop targets <span class="inlinecode">ignition_loc</span>. And neither secret file exists on the develop host yet.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target:</b> add the dev override <span class="inlinecode">…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json</span> with <span class="inlinecode">connectURL</span> → <span class="inlinecode">ignition_dev</span>. Copy the pattern from <span class="inlinecode">TimescaleDB</span>, which already has one.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values:</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on the <span class="inlinecode">lab-gateway-dev</span> environment.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target (Ignition Gateway):</b> add the dev override <span class="inlinecode">…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json</span> with <span class="inlinecode">connectURL</span> → <span class="inlinecode">ignition_dev</span>, and its <span class="inlinecode">prd</span> twin → <span class="inlinecode">ignition_prd</span> (prod inherits the same core flaw). Copy the pattern from <span class="inlinecode">TimescaleDB</span>, which has all three modes.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values (Github):</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on <b>both</b> environments: <span class="inlinecode">lab-gateway-dev</span> and <span class="inlinecode">lab-gateway-prod</span> — 1D promotes the same fix to prod.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span>, <b>before</b> <span class="inlinecode">compose up</span>: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret.</div></div>
-        <div class="step"><div class="ix">5</div><div class="tx">Sanity check locally: <span class="inlinecode">scripts/validate.sh</span> green, secret scan zero findings, <span class="inlinecode">git status</span> shows no <span class="inlinecode">secrets/*.txt</span>.</div></div>
+        <div class="step"><div class="ix">5</div><div class="tx">Sanity check locally: <span class="inlinecode">./scripts/validate.sh</span> green, secret scan zero findings, <span class="inlinecode">git status</span> shows no <span class="inlinecode">secrets/*.txt</span>.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># deploy.yml: the step you add</span>
+        <div class="code"><pre><span class="cm"># 1: both fault causes are visible in the repo tree</span>
+services/config/resources/
+  core/ignition/database-connection/
+    TimescaleDB/          <span class="cm">← has loc/ dev/ prd/ overrides</span> <span class="grn">✓</span>
+    TimescaleDB_Reports/  <span class="cm">← core only → ignition_loc everywhere</span> <span class="red">✗</span>
+  dev/ignition/database-connection/
+    TimescaleDB/          <span class="cm">← the pattern to copy (2×: dev + prd)</span>
+secrets/
+  *.txt.example only      <span class="cm">← nothing real ships; dev has no files</span>
+
+<span class="cm"># 4: deploy.yml — the step you add</span>
 - name: Materialize secret files
   env:
     POSTGRES_PASSWORD: <span class="cmd2">${{ secrets.POSTGRES_PASSWORD }}</span>
@@ -503,7 +513,7 @@ grep -r "$(cat secrets/reporting_password.txt)" \
     <div class="stage">Part 1 · D · the full deploy</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1D</span><div><div class="title">Ship the fix: branch, PR, validation, pipeline, then verify develop</div><div class="lead">This is the full deploy moment, every station spelled out. Don't rush it: watch each one actually happen before moving to the next.</div></div></div>
+    <div class="sechead"><span class="num">1D</span><div><div class="title">Ship the fix: branch, PR, validation, pipeline, verify develop — then promote to prod</div><div class="lead">This is the full deploy moment, every station spelled out. Don't rush it: watch each one actually happen before moving to the next.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Branch:</b> <span class="inlinecode">git checkout -b feature/fix-dev-db-connections</span>.</div></div>
@@ -512,7 +522,8 @@ grep -r "$(cat secrets/reporting_password.txt)" \
         <div class="step"><div class="ix">4</div><div class="tx"><b>Watch the PR validate:</b> <span class="inlinecode">ci.yml</span> runs on the PR: validate + secret scan green before anyone may merge.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx"><b>Merge</b> the PR into <span class="inlinecode">main</span>.</div></div>
         <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → compose up → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
-        <div class="step"><div class="ix">7</div><div class="tx"><b>Verify develop:</b> <i>Config → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_dev</span>.</div></div>
+        <div class="step"><div class="ix">7</div><div class="tx"><b>Verify develop:</b> <i>Connections → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_dev</span>.</div></div>
+        <div class="step"><div class="ix">8</div><div class="tx"><b>Promote to prod:</b> Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b> → <span class="inlinecode">target: prod</span>. Same commit, same pipeline, different environment. Verify prod: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_prd</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre>feature/fix-dev-db-connections
@@ -526,10 +537,13 @@ main → <span class="cmd2">deploy.yml</span>: secrets → up → scan → verif
     ▼
 develop gateway
   TimescaleDB           <span class="grn">Valid</span>
-  TimescaleDB_Reports   <span class="grn">Valid</span> → ignition_dev</pre></div>
+  TimescaleDB_Reports   <span class="grn">Valid</span> → ignition_dev
+    │ Run workflow → <span class="cmd2">target: prod</span>
+    ▼
+prod gateway — both <span class="grn">Valid</span> → ignition_prd</pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">✅ Part 1 gate</span>
-          <p>Both connections <b>Valid on develop, fixed by the pipeline and not by hand</b>, and you can narrate the full path: <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</p>
+          <p>Both connections <b>Valid on develop AND prod, fixed by the pipeline and not by hand</b>, and you can narrate the full path: <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</p>
         </div>
       </div>
     </div>
@@ -692,7 +706,7 @@ docker exec lab06-timescaledb psql -U ignition \
   <div class="body">
     <div class="sechead"><span class="num">GATE</span><div><div class="title">Definition of done for all three parts</div><div class="lead">Walk these three gates before you call it. If one fails, that part isn't done, however green your last run was.</div></div></div>
     <div class="steps" style="max-width:1000px">
-      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on develop</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
+      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on develop and prod</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline → promote with <span class="inlinecode">target: prod</span>), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
       <div class="step"><div class="ix p">2</div><div class="tx"><b>Part 2:</b> a green deploy run whose log shows <b>migrate before ship</b>, dev's <span class="inlinecode">schema_migrations</span> ledger at version 2, and the up/down pair committed.</div></div>
       <div class="step"><div class="ix">3</div><div class="tx"><b>Part 3:</b> the module shows <b>Running</b> on develop with license acceptance in config, and you've seen what the negative test does on a fresh boot.</div></div>
     </div>
