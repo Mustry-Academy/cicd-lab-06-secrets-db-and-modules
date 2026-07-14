@@ -73,7 +73,7 @@ migrations.
 ### Demo 4 — modules and JARs, in both repos
 
 1. The file-based repo's `third-party-modules/it|ot/` and the copy step to the gateway host; the image-based repo's `modules/ignition/` as a COPY layer.
-2. Headless acceptance: `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS` env vars, and `modules.json` entries with `certFingerprint` + `licenseAgreementHash`.
+2. Headless acceptance: `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS` env vars, and the `modules.json` `certFingerprint` + `licenseAgreementHash` the gateway *derives* on first boot (you commit what it wrote — you never type them).
 3. The JDBC driver JAR living **inside** the 8.3 config tree (`database-driver/PostgreSQL/postgresql-42.7.2.jar` next to its `config.json`), vs library JARs (`modules/jar/` → `lib/core/gateway/`) with pinned dependencies and a README recording where each JAR came from.
 
 ## You do (breakout rooms)
@@ -180,21 +180,41 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and dev's ledger at version 2 (a later prod promotion migrates `ignition_prd` the same way).
 
 ### Part 3 — deploy a third-party module (±10 min)
-- Enable the spare `.modl` in `services/modules.json`, ship it through the pipeline, and verify Config → Modules shows it **Running** with no hands on the gateway. Negative test: remove the `licenseAgreementHash`, redeploy, observe, restore.
+- Install the spare `.modl` by adding a **minimal** `services/modules.json` entry, let the gateway derive the acceptance fields, commit them, ship it through the pipeline, and verify it comes up **Running** with no hands on the gateway.
 
-  The spare module is **Embr Periscope**. Its manifest entry ships `"onStartup": "disabled"` — but with the `certFingerprint` and `licenseAgreementHash` already recorded:
+  The spare module is **Embr Periscope**. The `.modl` already sits in `third-party-modules/`, and the module id is already listed in the compose `GATEWAY_MODULES_ENABLED`, `ACCEPT_MODULE_LICENSES`, and `ACCEPT_MODULE_CERTS` env vars — but it ships **without a `modules.json` entry**, so the gateway doesn't load it. Nothing runs until you add the entry.
+
+  **Step 1 — add the two lines you actually know.** You do *not* know the fingerprint or the license hash, and you shouldn't guess. Add only:
 
   ```json
   "com.mussonindustrial.embr.periscope": {
     "filename": "/third-party-modules/Embr-Periscope-Ignition83-0.12.0.modl",
-    "onStartup": "disabled",          ← flip this to "enabled"
-    "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
-    "licenseAgreementHash": 101444854
+    "onStartup": "enabled"
   }
   ```
 
-  Those two acceptance fields are the whole point: they are what lets a gateway install the module **without a human clicking an install dialog**. The negative test shows what happens without them — a gateway that boots with an enabled-but-unaccepted module parks itself at the commissioning screen and waits for a hand. (That's also why the seed ships them even for the disabled module: `GATEWAY_MODULES_ENABLED` in the compose file lists Periscope, and an unaccepted entry would trap every *fresh* gateway in commissioning before the lab even starts.)
-- **Gate:** module Running on dev, hands-free.
+  **Step 2 — boot once and let the gateway fill in the rest.** Restart the local gateway (`docker restart lab06-gateway-loc`, or re-run `scripts/setup.sh`). Because acceptance is already in the env vars, the gateway installs the module headlessly and **rewrites `modules.json`**, appending the two fields it computed:
+
+  ```json
+    "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
+    "licenseAgreementHash": 101444854
+  ```
+
+  `git diff services/modules.json` shows exactly what it added. **Commit those two lines.** They are the whole point: with acceptance stored as data, a *fresh* gateway (an image-based deploy, a rebuilt container) installs the module without a human ever clicking an install dialog — and without needing the env vars at all.
+
+  **Step 3 — verify it's actually Running (two ways, no UI needed):**
+
+  ```bash
+  # 1) the module's web resources are served only when it's Running:
+  curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/res/embr-periscope/   # -> 200
+  # 2) the gateway logged it starting up:
+  docker logs lab06-gateway-loc 2>&1 | grep "Starting up module 'com.mussonindustrial.embr.periscope'"
+  ```
+
+  A `200` (not `302`/`404`) plus a `Starting up module` line = installed and Running. In the UI it's *Config → Modules*.
+
+  **Negative test (what un-accepted looks like):** in a scratch checkout, delete the two derived lines **and** drop `com.mussonindustrial.embr.periscope` from `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS`, wipe the local volume, and boot. With the module enabled but unaccepted the gateway parks at the commissioning screen — `curl http://localhost:8088/StatusPing` returns `{"state":"RUNNING","details":"COMMISSIONING"}` and `/res/embr-periscope/` redirects (`302`). Put both back to recover.
+- **Gate:** module Running on dev, hands-free — `/res/embr-periscope/` returns `200`.
 
 ### Stretch (optional)
 - **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and develop faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?

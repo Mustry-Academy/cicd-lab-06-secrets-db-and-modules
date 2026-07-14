@@ -140,12 +140,6 @@
     "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
     "licenseAgreementHash": 3266212556
   },
-  "com.mussonindustrial.embr.periscope": {
-    "filename": "/third-party-modules/Embr-Periscope-Ignition83-0.12.0.modl",
-    "onStartup": "enabled",
-    "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
-    "licenseAgreementHash": 101444854
-  },
   "com.mustry.historian.timescaledb": {
     "filename": "/third-party-modules/TimescaleDB-Historian.modl",
     "onStartup": "enabled",

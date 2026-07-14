@@ -957,7 +957,7 @@ CREATE TABLE recipe_params (…);</pre>
       <span class="num">15</span>
       <div>
         <div class="title">Third-party modules: commit the .modl, load it from a folder, accept the license in config</div>
-        <div class="lead">Both reference repos do the same three things. The <span class="mono">.modl</span> binaries live in Git, a JVM flag points the gateway at them, and license acceptance is data, not a click.</div>
+        <div class="lead">The <span class="mono">.modl</span> binary lives in Git, a JVM flag points the gateway at the folder, and license acceptance is data, not a click. You never type the fingerprint by hand: the gateway computes it.</div>
       </div>
     </div>
 
@@ -965,34 +965,36 @@ CREATE TABLE recipe_params (…);</pre>
       <div class="does">
         <div class="hd">The pattern (both production repos, identically)</div>
         <ul>
-          <li><span class="d"></span><span><b>Commit the binaries.</b> <code>third-party-modules/</code> holds the <span class="mono">.modl</span> files (MQTT Engine, Embr Charts, TimescaleDB Historian…), split per gateway where needs differ (e.g. <code>it/</code> vs <code>ot/</code>).</span></li>
-          <li><span class="d"></span><span><b>Point the gateway at the folder.</b> The 8.3 flag <span class="mono">-Dignition.gateway.externalModulesFolder=/external-modules</span> loads them at boot: no UI install, ever.</span></li>
-          <li><span class="d"></span><span><b>Ship them like everything else.</b> File-based: the pipeline copies the folder to the gateway host. Image-based: one <span class="mono">COPY</span> layer, like you saw in the production Dockerfile yesterday.</span></li>
+          <li><span class="d"></span><span><b>Commit the binary.</b> Drop the <span class="mono">.modl</span> into <code>third-party-modules/</code> — it's tracked in Git like any other file (Git LFS in the real repos; these ship small enough to commit directly).</span></li>
+          <li><span class="d"></span><span><b>The folder is already wired.</b> Every gateway's compose <code>command:</code> passes <span class="mono">-Dignition.gateway.externalModulesFolder=/third-party-modules</span> — the container path the repo folder is mounted at. Nothing to change; that flag is what makes the gateway load from the folder at boot instead of the UI.</span></li>
+          <li><span class="d"></span><span><b>Ship it like everything else.</b> File-based: the pipeline copies the folder to the gateway host. Image-based: one <span class="mono">COPY</span> layer, like the production Dockerfile yesterday.</span></li>
         </ul>
+        <div class="callout" style="margin-top:12px">
+          <div class="lab">Where do certFingerprint &amp; licenseAgreementHash come from?</div>
+          <p>You don't guess them. List the module in the three env vars, add a <b>minimal</b> manifest entry, boot once — the gateway accepts headlessly and <b>writes both values back into <span class="mono">modules.json</span></b>. Commit what it wrote. Now a <i>fresh</i> gateway with no env vars accepts from config alone.</p>
+        </div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># headless license/cert acceptance, two mechanisms:</span>
+        <div class="code"><pre><span class="cm"># 1 · compose env vars — list the module id in all three</span>
+GATEWAY_MODULES_ENABLED:  <span class="cmd2">…, com.mussonindustrial.embr.charts</span>
+ACCEPT_MODULE_LICENSES:   <span class="cmd2">…, com.mussonindustrial.embr.charts</span>
+ACCEPT_MODULE_CERTS:      <span class="cmd2">…, com.mussonindustrial.embr.charts</span>
 
-<span class="cm"># 1 · compose env vars (local + fresh containers)</span>
-ACCEPT_IGNITION_EULA: "Y"
-ACCEPT_MODULE_LICENSES: <span class="cmd2">"com.cirruslink.mqtt.engine.gateway"</span>
-ACCEPT_MODULE_CERTS: <span class="cmd2">"…"</span>
+<span class="cm"># 2 · modules.json — you write only these two lines:</span>
+"com.mussonindustrial.embr.charts": {
+  "filename": <span class="cmd2">"/third-party-modules/Embr-Charts-Ignition83-4.0.1.modl"</span>,
+  "onStartup": <span class="cmd2">"enabled"</span>
+}
 
-<span class="cm"># 2 · modules.json (per-module, committed)</span>
-"com.cirruslink.mqtt.engine.gateway": {
-  "onStartup": "enabled",
-  "certFingerprint": <span class="cmd2">"b3d505…"</span>,
-  "licenseAgreementHash": <span class="cmd2">1007003261</span>
-}</pre></div>
-        <div class="callout" style="margin-top:14px">
-          <div class="lab">Why acceptance must be data</div>
-          <p>A fresh gateway (an image-based deploy, or a rebuilt container) has never seen the license dialog. If acceptance isn't in config, <b>your module silently doesn't start</b>: the cert fingerprint and license hash let the gateway accept it headlessly, every boot.</p>
-        </div>
+<span class="cm"># 3 · boot once → the gateway ADDS these itself:</span>
+  <span class="cmd2">"certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",</span>
+  <span class="cmd2">"licenseAgreementHash": 3266212556</span>
+<span class="cm"># commit them → fresh gateways accept headlessly, every boot</span></pre></div>
       </div>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Shown on screen: the production repos' third-party-modules folders</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Verified live: minimal entry + env acceptance → gateway derives the fingerprint/hash</span></div>
 </section>
 
 <!-- 21b · JAR FILES -->

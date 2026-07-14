@@ -77,23 +77,51 @@ from that branch with `target=dev`.
 ### A3. Module-manifest behaviour (all verified live — read before editing
 ### Part 3)
 
-- **`GATEWAY_MODULES_ENABLED` force-disables absent modules on every boot**,
-  silently, regardless of modules.json. The spare module must stay in that
-  compose list; what Part 3 toggles is `onStartup` in the manifest.
-- **An env-enabled module without accepted license terms parks the gateway
-  at the commissioning screen** (`needs_commissioning`, web UI → welcome,
-  scan API → 400) — on a FRESH volume too. That's why the seed ships
-  Periscope's `certFingerprint` + `licenseAgreementHash` with
-  `onStartup: "disabled"`. It is also exactly what the Part 3 negative test
-  demonstrates: remove the hash, redeploy, and dev parks until the
-  acceptance is restored (a redeploy with the hash back un-parks it).
+**Part 3 design (env-var derivation) — reverified live 2026-07-14 on a fresh
+volume, local gateway, Ignition 8.3.6.** The whole point of Part 3 is that the
+student never types the fingerprint/hash: the gateway computes them.
+
+- **A `.modl` in the external-modules folder is NOT auto-installed on its own.**
+  Dropping the file and listing the module in `GATEWAY_MODULES_ENABLED` is not
+  enough — with no `modules.json` entry pointing at the file, the module simply
+  does not load (verified: charts absent from the manifest → never starts,
+  `/res/embr-charts/` → 404, gateway boots clean). The manifest entry
+  (`filename` + `onStartup`) is what installs it. (This corrects the earlier
+  note that claimed the gateway auto-registers any `.modl` it finds.)
+- **The gateway DERIVES `certFingerprint` + `licenseAgreementHash` and writes
+  them back into the mounted `modules.json`.** Give it a minimal entry
+  (`filename` + `onStartup: "enabled"`, no fingerprint/hash) for a module that
+  is listed in `ACCEPT_MODULE_LICENSES` + `ACCEPT_MODULE_CERTS`, boot once, and
+  the file gains the two computed fields. Verified values: charts
+  `e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2` / `3266212556`; periscope same
+  cert fingerprint / `101444854`. This is the derivation students commit.
+- **Seed state for the spare (Periscope): in all three env vars, but ABSENT
+  from `services/modules.json`.** So on a fresh boot the gateway comes up clean
+  and RUNNING with periscope *not* loaded (`/res/embr-periscope/` → 404). Part 3
+  is a single-file edit: add the minimal manifest entry → boot → gateway derives
+  and writes the two fields → commit. (Charts stays fully specified + enabled in
+  the seed as the worked teaching example on slide 15.)
+- **`GATEWAY_MODULES_ENABLED` force-*enables* a listed module even when the
+  manifest says `onStartup: "disabled"`** — the env list wins. That's why the
+  spare is kept OUT of the seed manifest entirely rather than shipped
+  `disabled`: a `disabled` entry would be overridden to enabled on the next boot
+  anyway. A module ABSENT from `GATEWAY_MODULES_ENABLED` is force-disabled.
+- **An env-enabled module without accepted terms parks the gateway at the
+  commissioning screen** (`{"state":"RUNNING","details":"COMMISSIONING"}`,
+  `needs_commissioning`, web UI → welcome, scan API → 400) — on a FRESH volume
+  too. This is the Part 3 negative test: drop the module from `ACCEPT_MODULE_*`
+  and remove its derived fields, wipe the volume, boot → parks; restore both →
+  un-parks.
 - **Enablement is sticky**: once a gateway has run a module, flipping the
   manifest back to `disabled` does NOT unload it (the internal DB wins and
   rewrites the file). Removing acceptance DOES bite. To truly reset a
   gateway's module state, wipe its data volume and re-run `setup.sh`.
-- The gateway auto-registers any `.modl` it finds in the external-modules
-  folder into its manifest, and rewrites the mounted `modules.json` at will
-  — which is why dev/prod get their own copies under `gateways/<gw>/`.
+- **Verifying "actually Running", hands-free (no UI):** the module's mounted web
+  resources are served only when it is Running — `curl -s -o /dev/null -w
+  '%{http_code}' http://localhost:8088/res/embr-periscope/` returns **200**
+  (Running), **302** (parked/commissioning), or **404** (not installed). Cross-
+  check the wrapper log: `Starting up module 'com.mussonindustrial.embr.periscope'`
+  with no matching `Shutting down` after it.
 - **`StatusPing` says `"state":"RUNNING"` even while commissioning** (the
   detail field carries `"COMMISSIONING"`); a green health check does not
   mean the API is up. The deploy's scan step (HTTP 400) is what actually
@@ -206,10 +234,14 @@ exists in core** (the Reports connection's database target).
   a red step nobody reads.
 
 ### Part 3
-Entry for `com.mussonindustrial.embr.periscope` (values in
-`exercises/lab.md`). Negative test: without `licenseAgreementHash` a fresh
-boot leaves the module unloaded/quarantined — license acceptance is config,
-not memory.
+Add the minimal `com.mussonindustrial.embr.periscope` entry (`filename` +
+`onStartup: "enabled"`) — the spare ships ABSENT from `services/modules.json`.
+Boot once: the gateway derives `certFingerprint` + `licenseAgreementHash`
+(`…/101444854`) and writes them into the file; commit those. Verify Running
+with `curl .../res/embr-periscope/` → 200. Negative test: drop periscope from
+`ACCEPT_MODULE_*` and remove the derived fields → a fresh boot parks the
+gateway at commissioning — license acceptance is config, not memory. (See A3
+for the full verified behaviour.)
 
 ### Stretch
 - S1: internal provider = ciphertext in gateway config → faults after deploy
