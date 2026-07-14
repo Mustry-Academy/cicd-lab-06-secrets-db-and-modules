@@ -178,7 +178,9 @@ exists in core** (the Reports connection's database target).
   ```
 - 1D: branch `feature/fix-dev-db-connections` → PR (ci.yml: validate +
   secret scan) → merge → deploy.yml (materialize → ship secrets → ship
-  files → scan → verify) → both Valid, Reports on `ignition_dev`.
+  files → scan → verify) → both Valid, Reports on `ignition_dev` → promote
+  with a manual dispatch (`target: prod`) → both Valid on prod, Reports on
+  `ignition_prd`.
 
 ### Part 2
 - 2A: `0002_add_downtime_log.up.sql` / `.down.sql` (CREATE TABLE
@@ -186,7 +188,8 @@ exists in core** (the Reports connection's database target).
   at version 2, idempotent re-run. The editing-an-applied-file trap: tool
   stays silent; rule lives in `db-migration/MIGRATIONS.md`.
 - 2B: at the marked insertion point (before the ship steps, NOT
-  continue-on-error):
+  continue-on-error), deriving the database from the deploy target so a
+  `target: prod` promotion migrates `ignition_prd`:
 
   ```yaml
   - name: Migrate database
