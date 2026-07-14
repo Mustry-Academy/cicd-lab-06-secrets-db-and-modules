@@ -374,7 +374,14 @@ TimescaleDB_Reports   <span class="red">Faulted</span></pre></div>
         <div class="step"><div class="ix">4</div><div class="tx">Recreate and prove it: inspect shows no passwords; both files sit at <span class="inlinecode">/run/secrets/</span> inside the containers.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># docker-compose.yaml</span>
+        <div class="code"><pre><span class="cm"># 1: see the leak</span>
+docker inspect lab06-timescaledb | grep PASSWORD
+
+<span class="cm"># 2: create the real files from the committed examples</span>
+cp secrets/postgres_password.txt<span class="cmd2">.example</span> secrets/postgres_password.txt
+cp secrets/reporting_password.txt<span class="cmd2">.example</span> secrets/reporting_password.txt
+
+<span class="cm"># 3: docker-compose.yaml</span>
 secrets:
   postgres_password:
     file: ./secrets/postgres_password.txt
@@ -385,12 +392,14 @@ services:
   timescaledb:
     secrets: [postgres_password]
     environment:
-      POSTGRES_PASSWORD_FILE: <span class="cmd2">/run/secrets/postgres_password</span>
+      POSTGRES_PASSWORD_FILE: <span class="cmd2">/run/secrets/postgres_password</span>  <span class="cm"># replaces POSTGRES_PASSWORD</span>
+      REPORTING_PASSWORD_FILE: <span class="cmd2">/run/secrets/reporting_password</span>   <span class="cm"># replaces REPORTING_PASSWORD</span>
   gateway-loc:
     secrets: [postgres_password, reporting_password]
 
-<span class="cm"># step 4: the proof</span>
-docker inspect lab06-timescaledb | grep PASSWORD
+<span class="cm"># 4: recreate, then the proof</span>
+docker compose up -d
+docker inspect lab06-timescaledb | grep PASSWORD   <span class="cm"># → nothing</span>
 docker exec lab06-gateway-loc ls -l /run/secrets/</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Same value</span>
