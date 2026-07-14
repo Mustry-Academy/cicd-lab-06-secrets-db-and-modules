@@ -242,14 +242,25 @@ reset_desynced_gateways() {
     fi
     for gw in "${LAB_GATEWAYS[@]}"; do
         case "$gw" in
-            local) identity_dir="$PROJECT_ROOT/services/config/resources/core/ignition/user-source/default" ;;
-            *)     identity_dir="$PROJECT_ROOT/gateways/$gw/config/resources/core/ignition/user-source/default" ;;
+            local) identity_dir="$PROJECT_ROOT/services/config/resources/core/ignition/user-source/default"
+                   svc="gateway-loc" ;;
+            *)     identity_dir="$PROJECT_ROOT/gateways/$gw/config/resources/core/ignition/user-source/default"
+                   svc="gateway-$gw" ;;
         esac
         vol="${project}_gateway-${gw}-data"
         if [ ! -d "$identity_dir" ] && docker volume inspect "$vol" >/dev/null 2>&1; then
             echo -e "${YELLOW}$gw gateway: data volume '$vol' exists but its config tree has no internal identity${NC}"
             echo "  (fresh clone next to an old stack?) — recreating it so commissioning runs again."
-            docker compose rm -sf "ignition-$gw" >/dev/null 2>&1 || true
+            # Remove the compose container first, or 'docker volume rm' below
+            # fails with "volume is in use". The compose service is
+            # gateway-loc/-dev/-prod, NOT ignition-<gw>.
+            docker compose rm -sf "$svc" >/dev/null 2>&1 || true
+            # Belt-and-suspenders: kill any other (orphaned) container still
+            # holding the volume — e.g. a Created container from a half-run
+            # setup that compose no longer tracks.
+            for c in $(docker ps -aq --filter "volume=$vol"); do
+                docker rm -f "$c" >/dev/null 2>&1 || true
+            done
             docker volume rm "$vol" >/dev/null
         fi
     done
