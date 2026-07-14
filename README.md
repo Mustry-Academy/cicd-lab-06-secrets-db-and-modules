@@ -9,7 +9,8 @@ This lab reuses Lab 04's file-based deploy stack (three gateways, bundled self-h
 ## Prerequisites
 
 - A fork of this repo, **with Actions enabled** — the warm-up, Parts 1C–1D and 2B are pipeline work (same setup as Lab 04)
-- The [GitHub CLI](https://cli.github.com/) (`gh`), authenticated (`gh auth status`) — `setup.sh` uses it to mint the runner's short-lived registration token; no Personal Access Token to create or store
+- A GitHub Personal Access Token with `repo` scope — the bundled runner uses it to auto-register against your fork. **Reuse the one you made in Lab 04** (or create one at [github.com/settings/tokens](https://github.com/settings/tokens) → classic → tick `repo`) and put it in `.env` as `RUNNER_GITHUB_PAT`. It never leaves `.env`.
+- The [GitHub CLI](https://cli.github.com/) (`gh`), authenticated (`gh auth status`) — used to fork and clone the repo
 - **≥ 8 GB free RAM for Docker** — three Ignition gateways each cap at 1 GB, plus TimescaleDB, the runner, and the usual Docker Desktop overhead
 - _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) — this lab reuses its stack and deploy mechanics; the config-scope overlays (`loc`/`dev`/`prd`) it shipped silently become load-bearing here
 
@@ -54,7 +55,7 @@ Reference reading: [`docs/secrets-management.md`](./docs/secrets-management.md) 
 ## Repo layout
 
 ```
-cicd-lab-06-multi-gateway-deploy/
+cicd-lab-06-secrets-db-and-modules/
 ├── README.md
 ├── docker-compose.yaml                 ← three gateways + TimescaleDB + runner. Passwords are
 │                                          still env vars — Part 1A moves them to file secrets
@@ -106,7 +107,7 @@ Both passwords are **embedded** secrets in the committed config, encrypted under
 
 Both deploy targets need:
 
-- The bundled self-hosted runner (`github-runner` service in `docker-compose.yaml`) registered against your fork with the `lab06` label — `setup.sh` handles registration via `gh`.
+- The bundled self-hosted runner (`github-runner` service in `docker-compose.yaml`) registered against your fork with the `lab06` label — it auto-registers using the `repo`-scope PAT in `RUNNER_GITHUB_PAT` (see `.env`; reuse your Lab 04 token).
 - A GitHub **environment** per target with the right secrets + variables:
 
 | Scope | Name | Type | Purpose |

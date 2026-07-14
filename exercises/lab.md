@@ -90,8 +90,8 @@ environment from the deploy target, so without them nothing deploys. From the
 CLI instead of the UI:
 
 ```bash
-gh api -X PUT repos/<you>/cicd-lab-06-multi-gateway-deploy/environments/lab-gateway-dev
-gh api -X PUT repos/<you>/cicd-lab-06-multi-gateway-deploy/environments/lab-gateway-prod
+gh api -X PUT repos/<you>/cicd-lab-06-secrets-db-and-modules/environments/lab-gateway-dev
+gh api -X PUT repos/<you>/cicd-lab-06-secrets-db-and-modules/environments/lab-gateway-prod
 gh secret set IGNITION_API_KEY --env lab-gateway-dev  --body 'cicd:<token from .env.example>'
 gh secret set IGNITION_API_KEY --env lab-gateway-prod --body 'cicd:<token from .env.example>'
 ```

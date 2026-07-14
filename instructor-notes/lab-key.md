@@ -125,10 +125,11 @@ from that branch with `target=dev`.
       }
     }
     ```
-- The bundled runner loses its registration if its container is recreated
-  without a fresh token (plain `docker compose up -d` after a config
-  change): jobs queue forever. Re-run `scripts/setup.sh` — it mints a token
-  and re-registers.
+- The bundled runner auto-registers from the `repo`-scope PAT in
+  `RUNNER_GITHUB_PAT` (reused from Lab 04), so a plain `docker compose up -d`
+  re-registers fine. If jobs queue forever, check the PAT isn't the
+  placeholder (a 401 in `docker compose logs github-runner`) and
+  `docker compose up -d --force-recreate github-runner`.
 - GitHub Actions had transient job-setup failures during the rehearsal
   ("Bad Gateway" / "Failed to resolve action download info") —
   `gh run rerun <id> --failed` cleared them; don't chase ghosts.

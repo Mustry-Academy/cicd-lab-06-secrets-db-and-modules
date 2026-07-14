@@ -262,9 +262,9 @@ body{
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Check <span class="inlinecode">gh auth status</span> while you're at it — <span class="inlinecode">setup.sh</span> uses it to mint the runner's registration token; no PAT today.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Grab your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> — the runner needs it again here (make one at <span class="inlinecode">github.com/settings/tokens</span> if you skipped Lab 04).</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and change <b>one line only</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>. Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span>. Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
       </div>
       <div>
@@ -272,16 +272,17 @@ body{
 cd ~/mustry-academy
 
 <span class="cm"># 2: fork to your account + clone your fork</span>
-gh repo fork mustry-academy/cicd-lab-06-multi-gateway-deploy --clone
+gh repo fork mustry-academy/cicd-lab-06-secrets-db-and-modules --clone
 <span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
-git clone git@github.com:&lt;your-username&gt;/cicd-lab-06-multi-gateway-deploy.git
-cd cicd-lab-06-multi-gateway-deploy
+git clone git@github.com:&lt;your-username&gt;/cicd-lab-06-secrets-db-and-modules.git
+cd cicd-lab-06-secrets-db-and-modules
 
 <span class="cm"># 3: enable Actions on github.com — your fork's Actions tab</span>
 
-<span class="cm"># 4: copy the env file, change ONE line only</span>
+<span class="cm"># 4: copy the env file, change TWO lines only</span>
 cp .env.example .env
 <span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span>
+<span class="cm">#    RUNNER_GITHUB_PAT=<span class="cmd2">ghp_your_lab04_token</span></span>
 
 <span class="cm"># 5: origin → YOUR username? good. Then VS Code + the stack</span>
 git remote -v
