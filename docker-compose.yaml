@@ -97,6 +97,12 @@ x-ignition-healthcheck: &ignition-healthcheck
   retries: 10
   start_period: 90s
 
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  reporting_password:
+    file: ./secrets/reporting_password.txt
+
 services:
   # --- local gateway: edits on the host show up here immediately --------------
   gateway-loc:
@@ -114,6 +120,7 @@ services:
       - ./services/config:/usr/local/bin/ignition/data/config
       - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
       - ./third-party-modules:/third-party-modules
+    secrets: [postgres_password, reporting_password]
     environment:
       <<: *ignition-env
       GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_LOCAL:-admin}"
@@ -141,7 +148,7 @@ services:
     depends_on:
       timescaledb:
         condition: service_healthy
-
+    
   # --- dev gateway: populated by deploy.yml (push to main) -------------------
   gateway-dev:
     image: inductiveautomation/ignition:8.3.6
@@ -251,11 +258,12 @@ services:
       options:
         max-size: "200k"
         max-file: "10"
+    secrets: [postgres_password]
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-ignition}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-lab06-postgres-pw}"
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: ignition_loc
-      REPORTING_PASSWORD: "${REPORTING_PASSWORD:-lab06-reporting-pw}"
+      REPORTING_PASSWORD_FILE: /run/secrets/reporting_password
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ignition}"]
       interval: 5s
