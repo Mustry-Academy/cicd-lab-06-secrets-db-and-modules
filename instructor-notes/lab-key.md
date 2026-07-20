@@ -68,6 +68,14 @@ All four flows ran green through the actual GitHub Actions pipeline:
 - **ci.yml**: all three jobs (Lint incl. ign-lint, Validate, Secret scan)
   green on PR #2.
 
+**OPEN (added 2026-07-20): the tag release flow is NOT yet E2E-verified.**
+1D's production promotion changed from a manual dispatch to the Lab 04
+routing: a `v*` tag fires the new thin `release.yml`, which calls `deploy.yml`
+(workflow_call, `target: production`, `secrets: inherit`). actionlint is
+green; before the course, push a `v*` tag on the upstream repo and confirm the
+called run picks up the `lab-gateway-production` environment secrets and goes
+green end to end.
+
 The runnable answer key lives on the **`rehearsal/lab-solutions`** branch
 (PR #2, draft, never to be merged): the Materialize + Migrate steps at their
 insertion points, the `TimescaleDB_Reports` test override, the `0002` pair,
@@ -206,9 +214,13 @@ exists in core** (the Reports connection's database target).
   ```
 - 1D: branch `feature/fix-test-db-connections` → PR (ci.yml: validate +
   secret scan) → merge → deploy.yml (materialize → ship secrets → ship
-  files → scan → verify) → both Valid, Reports on `ignition_test` → promote
-  with a manual dispatch (`target: production`) → both Valid on production, Reports on
-  `ignition_production`.
+  files → scan → verify) → both Valid, Reports on `ignition_test` → release
+  with a tag (`git tag v1.0.0 && git push origin v1.0.0` — release.yml is a
+  thin caller that runs deploy.yml via workflow_call with
+  `target: production`, so the student-added 1C/2B steps ship too; forks may
+  carry stale `v*` tags, next free number is fine) → both Valid on
+  production, Reports on `ignition_production`. Manual dispatch of deploy.yml
+  (`target: production`) remains the rollback / re-run button.
 
 ### Part 2
 - 2A: `0002_add_downtime_log.up.sql` / `.down.sql` (CREATE TABLE
@@ -237,7 +249,10 @@ Add the minimal `com.mussonindustrial.embr.periscope` entry (`filename` +
 `onStartup: "enabled"`) — the spare ships ABSENT from `services/modules.json`.
 Boot once: the gateway derives `certFingerprint` + `licenseAgreementHash`
 (`…/101444854`) and writes them into the file; commit those. Verify Running
-with `curl .../res/embr-periscope/` → 200. Negative test: drop periscope from
+via `docker logs … | grep "Starting up module"` or Config → Modules (the
+students' lab.md no longer uses the `/res/…` curl check — dropped by design;
+the curl mechanics in A3 stay valid for instructor-side debugging). Negative
+test: drop periscope from
 `ACCEPT_MODULE_*` and remove the derived fields → a fresh boot parks the
 gateway at commissioning — license acceptance is config, not memory. (See A3
 for the full verified behaviour.)

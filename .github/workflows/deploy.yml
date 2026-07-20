@@ -3,8 +3,12 @@
 #
 # GitHub Flow: `main` is the single long-lived branch. Feature branches merge
 # into it via PR (validated by ci.yml), and every push here ships the working
-# tree to the TEST gateway. Production deploys are the same workflow pointed at the
-# production gateway via the `target` input.
+# tree to the TEST gateway. Production ships via the Lab 04 routing: a `v*` TAG
+# on main fires release.yml, which calls this same workflow (workflow_call)
+# with `target: production` — one pipeline, so the steps you add in Parts 1C
+# and 2B ship to both gateways without being copied into a second file.
+# Manual dispatch with `target: production` is the rollback / re-run button
+# (pick the tag under "Use workflow from" to re-deploy a released version).
 #
 # File-based deploy via `docker cp` — the runner is a container without the
 # host's paths, so it ships files INTO the target gateway's container and then
@@ -61,6 +65,15 @@ on:
         description: "Gateway to deploy to"
         type: choice
         options: [test, production]
+        default: test
+  # release.yml calls this workflow on a v* tag — the tag is what ships to
+  # production, exactly like Lab 04's release.yml, but as a thin caller so the
+  # deploy steps (including the ones YOU add in 1C/2B) exist only once.
+  workflow_call:
+    inputs:
+      target:
+        description: "Gateway to deploy to"
+        type: string
         default: test
 
 concurrency:

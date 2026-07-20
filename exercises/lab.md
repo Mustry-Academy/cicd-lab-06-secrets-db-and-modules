@@ -152,10 +152,13 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   the diff) → **open the PR** → **watch the PR validate** (`ci.yml` green) →
   **merge** → **watch the pipeline deploy** (materialize secrets → up → scan →
   verify) → **verify develop** (both connections Valid, `TimescaleDB_Reports`
-  on `ignition_test`) → **promote to production** (Actions → `deploy.yml` → Run
-  workflow → `target: production` — same commit, same pipeline, different
-  environment) → **verify production** (both Valid, `TimescaleDB_Reports` on
-  `ignition_production`).
+  on `ignition_test`) → **release to production with a tag** (`git tag v1.0.0
+  && git push origin v1.0.0` — the Lab 04 routing: the tag, not the merge, is
+  what ships to production. `release.yml` fires on the tag and runs the same
+  `deploy.yml` with `target: production`: same commit, same pipeline steps —
+  including the ones you added — different environment) → **verify production**
+  (both Valid, `TimescaleDB_Reports` on `ignition_production`). Fork carried a
+  stale `v1.0.0` over? `git tag -l`, take the next free number.
 - **Gate:** both connections Valid on develop AND production, fixed by the pipeline
   and not by hand, and you can narrate: GitHub secret → file → provider →
   reference.
@@ -178,7 +181,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   ```
 
   PR with the migration **and** the screen that reads the new table together; watch the run migrate test before shipping; prove it in test's `schema_migrations`.
-- **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and test's ledger at version 2 (a later production promotion migrates `ignition_production` the same way).
+- **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and test's ledger at version 2 (a later `v*` release migrates `ignition_production` the same way).
 
 ### Part 3 — deploy three third-party modules (±10 min)
 - Install the three spare `.modl` files by adding **minimal** `services/modules.json` entries, let the gateway derive the acceptance fields, commit them, ship them through the pipeline, and verify they come up **Running** with no hands on the gateway.
@@ -211,21 +214,19 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 
   `git diff services/modules.json` shows exactly what it added. **Commit those lines.** They are the whole point: with acceptance stored as data, a *fresh* gateway (an image-based deploy, a rebuilt container) installs the modules without a human ever clicking an install dialog — and without needing the env vars at all.
 
-  **Step 3 — verify they are actually Running (two ways, no UI needed):**
+  **Step 3 — verify they are actually Running:**
 
   ```bash
-  # 1) a module's web resources are served only when it is Running:
-  curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/res/embr-periscope/   # -> 200
-  # 2) the gateway logged them starting up:
+  # the gateway logged them starting up:
   docker logs lab06-gateway-local-development 2>&1 | grep "Starting up module 'com.mussonindustrial"
   ```
 
-  A `200` (not `302`/`404`) plus a `Starting up module` line = installed and Running. In the UI it is *Config → Modules*: all three listed, all Running.
+  A `Starting up module` line = installed and Running. In the UI it is *Config → Modules*: all three listed, all Running.
 
   **Step 4 — ship them.** PR → merge → deploy run. Because the module manifest changed, the deploy **restarts** the gateway: modules only load at boot, unlike projects and config, which reload hot.
 
-  **Negative test (what un-accepted looks like), on one module:** in a scratch checkout, delete its two derived lines **and** drop `com.mussonindustrial.embr.periscope` from `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS`, wipe the local volume, and boot. With the module enabled but unaccepted the gateway parks at the commissioning screen — `curl http://localhost:8088/StatusPing` returns `{"state":"RUNNING","details":"COMMISSIONING"}` and `/res/embr-periscope/` redirects (`302`). Put both back to recover.
-- **Gate:** all three modules Running on test, hands-free — `/res/embr-periscope/` returns `200`.
+  **Negative test (what un-accepted looks like), on one module:** in a scratch checkout, delete its two derived lines **and** drop `com.mussonindustrial.embr.periscope` from `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS`, wipe the local volume, and boot. With the module enabled but unaccepted the gateway parks at the commissioning screen — `curl http://localhost:8088/StatusPing` returns `{"state":"RUNNING","details":"COMMISSIONING"}`. Put both back to recover.
+- **Gate:** all three modules Running on test, hands-free — *Config → Modules* shows all three Running.
 
 ### Stretch (optional)
 - **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and develop faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?

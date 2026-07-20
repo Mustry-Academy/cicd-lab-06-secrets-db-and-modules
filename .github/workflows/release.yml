@@ -1,0 +1,38 @@
+# Release to the production gateway on tag push (GitHub Flow release).
+#
+# Same routing you learned in Lab 04: a push to `main` deploys to TEST, a
+# `vX.Y.Z` tag on `main` ships to PRODUCTION. The tag pins the exact commit
+# production runs — a named, re-deployable version.
+#
+# One difference from Lab 04: there, release.yml was a full copy of the deploy
+# job. Here it is a THIN CALLER — it fires on the tag and runs deploy.yml
+# (workflow_call) with `target: production`. That matters in this lab because
+# Parts 1C and 2B have you ADD steps to deploy.yml (materialize secret files,
+# migrate the database): with one pipeline, your steps ship to test and
+# production alike, instead of having to be pasted into two workflows.
+#
+# deploy.yml starts with the ci.yml validation gate, so the tagged commit is
+# re-validated before it touches production (tags never go through a PR).
+#
+# Rollback: Actions → Deploy → Run workflow → pick the released tag under
+# "Use workflow from" → target: production.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: deploy-lab-gateway-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      target: production
+    secrets: inherit

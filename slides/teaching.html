@@ -282,7 +282,7 @@ body{
     </ul>
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Builds on</div>
-      <p>Everything today extends the <b>lab 04/05 stack</b>: the local → test → production gateways, the <code>.env.example</code> convention, and the <code>db-init/</code> folder you've already used without looking too closely at it.</p>
+      <p>Everything today extends the <b>lab 04/05 stack</b>: the local → test → production gateways, the <code>.env.example</code> convention, and the <code>db-init/</code> folder you've already used without looking too closely at it. The deploy routing is also unchanged: <b>push to <code>main</code> → test, <code>v*</code> tag → production</b> — only here <code>release.yml</code> is a thin caller that runs the one <code>deploy.yml</code>, so the steps you add today ship to both gateways.</p>
     </div>
   </div>
 
@@ -904,7 +904,7 @@ CREATE TABLE recipe_params (…);</pre>
     </div>
 
     <div class="flow">
-      <div class="fstep"><div class="fn">1</div><h5>Checkout</h5><p>Runner checks out the merged commit on <span class="mono">develop</span> (or the tag).</p></div>
+      <div class="fstep"><div class="fn">1</div><h5>Checkout</h5><p>Runner checks out the merged commit on <span class="mono">main</span> (or the <span class="mono">v*</span> release tag).</p></div>
       <div class="farr">→</div>
       <div class="fstep"><div class="fn">2</div><h5>Validate</h5><p>JSON checks, secret scan, same gate as CI.</p></div>
       <div class="farr">→</div>

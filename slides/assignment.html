@@ -180,7 +180,7 @@ body{
     <div class="sub">One warm-up together, then three parts solo.</div>
     <ul class="sub sub-list">
       <li><b>Warm-up:</b> deploy to develop and production, and find the broken database connections.</li>
-      <li><b>Part 1:</b> hook up a secret for the db-connection: two connections get file-based secrets, and a feature-branch PR ships the fix that makes develop Valid — then you promote it to production.</li>
+      <li><b>Part 1:</b> hook up a secret for the db-connection: two connections get file-based secrets, and a feature-branch PR ships the fix that makes develop Valid — then a <span class="inlinecode">v1.0.0</span> tag releases it to production.</li>
       <li><b>Part 2:</b> a schema change ships as a golang-migrate up/down pair that the pipeline applies before the screens land.</li>
       <li><b>Part 3:</b> three third-party modules ride the same pipeline, and a fresh gateway boots complete.</li>
     </ul>
@@ -228,7 +228,7 @@ body{
       <div class="pcard p1">
         <div class="pn">PART 1 · SOLO · ±30 MIN</div>
         <h4>Hook up a secret for the db-connection</h4>
-        <p>Two connections, two database users. Passwords become secret files, a file-based provider resolves them as referenced secrets, and a feature-branch PR ships the fix that makes develop's connections Valid — then the same commit promotes to production.</p>
+        <p>Two connections, two database users. Passwords become secret files, a file-based provider resolves them as referenced secrets, and a feature-branch PR ships the fix that makes develop's connections Valid — then a version tag releases the same commit to production.</p>
         <div class="gate">gate → both connections Valid on develop + production, fixed by the pipeline</div>
       </div>
       <div class="pcard p2">
@@ -501,7 +501,7 @@ TimescaleDB_Reports   <span class="cm">← core only → ignition_local_developm
     <div class="stage">Part 1 · D · the full deploy</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1D</span><div><div class="title">Ship the fix: branch, PR, validation, pipeline, verify develop — then promote to production</div><div class="lead">This is the full deploy moment, every station spelled out. Don't rush it: watch each one actually happen before moving to the next.</div></div></div>
+    <div class="sechead"><span class="num">1D</span><div><div class="title">Ship the fix: branch, PR, validation, pipeline, verify develop — then release to production with a tag</div><div class="lead">This is the full deploy moment, every station spelled out. Don't rush it: watch each one actually happen before moving to the next.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Branch:</b> <span class="inlinecode">git switch -c feature/fix-test-db-connections</span>.</div></div>
@@ -511,7 +511,7 @@ TimescaleDB_Reports   <span class="cm">← core only → ignition_local_developm
         <div class="step"><div class="ix">5</div><div class="tx"><b>Merge</b> the PR into <span class="inlinecode">main</span>.</div></div>
         <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → ship them into the gateway → ship projects and config → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
         <div class="step"><div class="ix">7</div><div class="tx"><b>Verify develop:</b> <i>Connections → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_test</span>.</div></div>
-        <div class="step"><div class="ix">8</div><div class="tx"><b>Promote to production:</b> Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b> → <span class="inlinecode">target: production</span>. Same commit, same pipeline, different environment. Verify production: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_production</span>.</div></div>
+        <div class="step"><div class="ix">8</div><div class="tx"><b>Release to production with a tag:</b> <span class="inlinecode">git tag v1.0.0 &amp;&amp; git push origin v1.0.0</span> — the Lab 04 routing: the <b>tag</b>, not the merge, ships to production. <span class="inlinecode">release.yml</span> fires and runs the <b>same</b> <span class="inlinecode">deploy.yml</span> with <span class="inlinecode">target: production</span> — including the steps you added. Verify production: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_production</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre>feature/fix-test-db-connections
@@ -526,7 +526,7 @@ main → <span class="cmd2">deploy.yml</span>: secrets → ship → scan → ver
 develop gateway
   TimescaleDB           <span class="grn">Valid</span>
   TimescaleDB_Reports   <span class="grn">Valid</span> → ignition_test
-    │ Run workflow → <span class="cmd2">target: production</span>
+    │ git tag v1.0.0 → <span class="cmd2">release.yml</span> → same deploy.yml, target: production
     ▼
 production gateway — both <span class="grn">Valid</span> → ignition_production</pre></div>
         <div class="goal good-g" style="margin-top:18px">
@@ -712,7 +712,7 @@ docker exec lab06-timescaledb psql -U ignition \
   <div class="body">
     <div class="sechead"><span class="num">GATE</span><div><div class="title">Definition of done for all three parts</div><div class="lead">Walk these three gates before you call it. If one fails, that part isn't done, however green your last run was.</div></div></div>
     <div class="steps" style="max-width:1000px">
-      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on develop and production</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline → promote with <span class="inlinecode">target: production</span>), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
+      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on develop and production</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline → release with a <span class="inlinecode">v*</span> tag), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
       <div class="step"><div class="ix p">2</div><div class="tx"><b>Part 2:</b> a green deploy run whose log shows <b>migrate before ship</b>, test's <span class="inlinecode">schema_migrations</span> ledger at version 2, and the up/down pair committed.</div></div>
       <div class="step"><div class="ix">3</div><div class="tx"><b>Part 3:</b> all three modules show <b>Running</b> on develop with license acceptance in config, and you've seen what the negative test does on a fresh boot.</div></div>
     </div>

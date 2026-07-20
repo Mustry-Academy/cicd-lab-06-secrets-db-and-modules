@@ -38,7 +38,7 @@ Once setup finishes you have three Ignition gateways and a TimescaleDB:
 |---|---|---|
 | `local` | http://localhost:8088 | Your working gateway — bind-mounted from `./projects/` + `./services/config/` |
 | `test` | http://localhost:8089 | Empty until `deploy.yml` runs (push to `main`, or manual dispatch) — deployed files visible under `./gateways/test/` |
-| `production` | http://localhost:8090 | Same, populated by a manual `deploy.yml` run with `target=production` |
+| `production` | http://localhost:8090 | Same, populated by a `v*` release tag (`release.yml`) or a manual `deploy.yml` run with `target=production` |
 | `timescaledb` | localhost:5432 | Databases `ignition_local_development` / `ignition_test` / `ignition_production`; logins `ignition` (r/w) and `reporting` (read-only) |
 
 Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_TEST/_PRODUCTION`, default `admin / password`).
@@ -77,8 +77,9 @@ cicd-lab-06-secrets-db-and-modules/
 │   └── migrate/                        ← numbered golang-migrate pairs; 0002 is yours (Part 2)
 ├── .github/workflows/
 │   ├── ci.yml                          ← PR validation: linters + JSON checks + secret scan
-│   └── deploy.yml                      ← push to main → test; manual dispatch → test or production.
-│                                          You add the Materialize-secrets (1C) and Migrate (2B) steps
+│   ├── deploy.yml                      ← push to main → test; manual dispatch = re-run/rollback button.
+│   │                                      You add the Materialize-secrets (1C) and Migrate (2B) steps
+│   └── release.yml                     ← v* tag → production: a thin caller that runs deploy.yml
 ├── exercises/lab.md                    ← the lab
 ├── docs/                               ← reference reading + troubleshooting
 ├── instructor-notes/                   ← answer key (read after solo work)
@@ -112,6 +113,7 @@ Both passwords are **embedded** secrets in the committed config, encrypted under
 |---|---|---|---|
 | [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` (free) | Linters, JSON validity, `.deployignore` syntax, **secret scan**. |
 | [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (deploy paths only); manual dispatch with `target: test\|production` | `[self-hosted, lab06]` | File-based deploy via `docker cp` + hot scan. Ships secret files (once your 1C step materializes them) and the module manifest (restarting the gateway only when it changed). |
+| [`release.yml`](./.github/workflows/release.yml) | `v*` tag on `main` | `[self-hosted, lab06]` | The Lab 04 routing: the tag ships to **production**. A thin caller that runs `deploy.yml` with `target: production` — one pipeline, so your 1C/2B steps ship to both gateways. |
 
 Both deploy targets need:
 
