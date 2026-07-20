@@ -421,7 +421,6 @@ docker exec lab06-gateway-loc ls -l /run/secrets/</pre></div>
         <div class="step"><div class="ix">2</div><div class="tx">Add two secrets to it: <span class="inlinecode">POSTGRES_PASSWORD</span> → <span class="inlinecode">/run/secrets/postgres_password</span> and <span class="inlinecode">REPORTING_PASSWORD</span> → <span class="inlinecode">/run/secrets/reporting_password</span>.</div></div>
         <div class="step"><div class="ix">3</div><div class="tx">Re-point <b>both</b> database connections' passwords at their <b>referenced</b> secret: <span class="inlinecode">TimescaleDB</span> → <span class="inlinecode">POSTGRES_PASSWORD</span>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">REPORTING_PASSWORD</span>. Test: both stay <b>Valid</b>. Note: check all deployment modes.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>Verify where it actually landed</b> — <span class="inlinecode">git status</span>. You want it under <span class="inlinecode">resources/core/</span>. If the UI wrote it into <span class="inlinecode">resources/loc/</span> instead (the active mode's collection), move it to <span class="inlinecode">core</span> and rescan: dev's chain is <span class="inlinecode">external → core → dev</span>, so <span class="inlinecode">loc</span> would stay green locally and fault on develop.</div></div>
-        <div class="step"><div class="ix">5</div><div class="tx">Prove nothing leaked: grep the exported config for both password values → no hits. All that's committed is the <span class="inlinecode">"type": "Referenced"</span> shape from the teaching.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># what lands in the committed config (per connection)</span>
@@ -437,13 +436,7 @@ docker exec lab06-gateway-loc ls -l /run/secrets/</pre></div>
 git status   <span class="cm"># → resources/<span class="grn">core</span>/ignition/secret-provider/LabSecrets/ ✓</span>
 <span class="cm">#    landed in loc instead? move it:</span>
 mv services/config/resources/<span class="cmd2">{loc,core}</span>/ignition/secret-provider
-./scripts/scan.sh config     <span class="cm"># gateway re-reads → still Valid</span>
-
-<span class="cm"># 5: prove the export is clean</span>
-grep -r "$(cat secrets/postgres_password.txt)" \
-  services/config/ || echo "clean ✅"
-grep -r "$(cat secrets/reporting_password.txt)" \
-  services/config/ || echo "clean ✅"</pre></div>
+./scripts/scan.sh config     <span class="cm"># gateway re-reads → still Valid</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Names travel</span>
           <p>The provider and the references are ordinary config: they <b>deploy — but only from a collection the target inherits</b> (<span class="inlinecode">core</span>). The files behind them don't travel, and mustn't. 1C is about getting those files onto the develop host.</p>
