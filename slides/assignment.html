@@ -464,23 +464,20 @@ grep -r "$(cat secrets/reporting_password.txt)" \
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Diagnose:</b> <span class="inlinecode">TimescaleDB_Reports</span> only exists in <span class="inlinecode">core</span>, so develop targets <span class="inlinecode">ignition_loc</span>. And neither secret file exists on the develop host yet.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target (Ignition Gateway):</b> add the dev override <span class="inlinecode">…resources/dev/ignition/database-connection/TimescaleDB_Reports/config.json</span> with <span class="inlinecode">connectURL</span> → <span class="inlinecode">ignition_dev</span>, and its <span class="inlinecode">prd</span> twin → <span class="inlinecode">ignition_prd</span> (prod inherits the same core flaw). Copy the pattern from <span class="inlinecode">TimescaleDB</span>, which has all three modes.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target (Ignition Gateway):</b> in the gateway UI, give <span class="inlinecode">TimescaleDB_Reports</span> a <b>dev</b> deployment-mode override pointing <span class="inlinecode">connectURL</span> at <span class="inlinecode">ignition_dev</span>, and a <b>prd</b> one at <span class="inlinecode">ignition_prd</span> (prod inherits the same core flaw). <span class="inlinecode">TimescaleDB</span> already has all three modes: use it as the example.</div></div>
         <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values (Github):</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on <b>both</b> environments: <span class="inlinecode">lab-gateway-dev</span> and <span class="inlinecode">lab-gateway-prod</span> — 1D promotes the same fix to prod.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span>, <b>before</b> <span class="inlinecode">compose up</span>: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span>, directly <b>above</b> the existing <span class="inlinecode">Ship secret files into gateway container</span> step: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret. That ship step is a no-op until yours writes the files.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx">Sanity check locally: <span class="inlinecode">./scripts/validate.sh</span> green, secret scan zero findings, <span class="inlinecode">git status</span> shows no <span class="inlinecode">secrets/*.txt</span>.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: both fault causes are visible in the repo tree</span>
-services/config/resources/
-  core/ignition/database-connection/
-    TimescaleDB/          <span class="cm">← has loc/ dev/ prd/ overrides</span> <span class="grn">✓</span>
-    TimescaleDB_Reports/  <span class="cm">← core only → ignition_loc everywhere</span> <span class="red">✗</span>
-  dev/ignition/database-connection/
-    TimescaleDB/          <span class="cm">← the pattern to copy (2×: dev + prd)</span>
-secrets/
-  *.txt.example only      <span class="cm">← nothing real ships; dev has no files</span>
+        <div class="code"><pre><span class="cm"># 1: two fault causes</span>
+TimescaleDB           <span class="cm">← has loc/dev/prd overrides</span> <span class="grn">✓</span>
+TimescaleDB_Reports   <span class="cm">← core only → ignition_loc</span>  <span class="red">✗</span>
+                      <span class="cm">  everywhere, dev included</span>
+<span class="cm">…and no secret files exist on the dev host yet.</span>
 
-<span class="cm"># 4: deploy.yml — the step you add</span>
+<span class="cm"># 4: deploy.yml — the step you add, directly</span>
+<span class="cm">#    ABOVE "Ship secret files into gateway container"</span>
 - name: Materialize secret files
   env:
     POSTGRES_PASSWORD: <span class="cmd2">${{ secrets.POSTGRES_PASSWORD }}</span>
@@ -517,7 +514,7 @@ secrets/
         <div class="step"><div class="ix">3</div><div class="tx"><b>Open the PR</b> against <span class="inlinecode">main</span> and read your own diff, top to bottom.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>Watch the PR validate:</b> <span class="inlinecode">ci.yml</span> runs on the PR: validate + secret scan green before anyone may merge.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx"><b>Merge</b> the PR into <span class="inlinecode">main</span>.</div></div>
-        <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → compose up → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
+        <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → ship them into the gateway → ship projects and config → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
         <div class="step"><div class="ix">7</div><div class="tx"><b>Verify develop:</b> <i>Connections → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_dev</span>.</div></div>
         <div class="step"><div class="ix">8</div><div class="tx"><b>Promote to prod:</b> Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b> → <span class="inlinecode">target: prod</span>. Same commit, same pipeline, different environment. Verify prod: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_prd</span>.</div></div>
       </div>
@@ -528,7 +525,7 @@ secrets/
 PR → <span class="cmd2">ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
     │ merge
     ▼
-main → <span class="cmd2">deploy.yml</span>: secrets → up → scan → verify <span class="grn">✅</span>
+main → <span class="cmd2">deploy.yml</span>: secrets → ship → scan → verify <span class="grn">✅</span>
     │
     ▼
 develop gateway
