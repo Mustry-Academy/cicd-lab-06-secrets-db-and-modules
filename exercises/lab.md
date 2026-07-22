@@ -253,9 +253,12 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **S3.** Add a `gitleaks` job to `ci.yml` (`fetch-depth: 0` — the scanner must see history); test with a fake-key PR.
 - **S4.** Ship a **library JAR** through the pipeline and use it on a screen.
   The teaching's second kind of JAR, done for real: `jar-files/jar/` carries
-  `commons-lang3-3.19.0.jar` (pinned, checksummed in its README), and your job
+  `commons-csv-1.14.1.jar` (pinned, checksummed in its README), and your job
   is to get it onto the gateway classpath (`lib/core/gateway/`) via the
-  pipeline, then prove it works from a Perspective screen.
+  pipeline, then prove it works from a Perspective screen. (commons-csv on
+  purpose: the Ignition image already bundles commons-lang3, commons-text,
+  guava and friends under `lib/core/common/`, so importing those would
+  succeed without you shipping anything — see `jar-files/jar/README.md`.)
 
   1. **Prove the gap first.** In any lab project, add a view with a **Text
      Field** and a **Label** next to it. Bind the label's `props.text` to the
@@ -264,13 +267,15 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 
      ```python
      def transform(self, value, quality, timestamp):
-         from org.apache.commons.lang3 import StringUtils
-         return StringUtils.reverse(value or "")
+         from org.apache.commons.csv import CSVFormat
+         from java.io import StringReader
+         records = CSVFormat.DEFAULT.parse(StringReader(value or "")).getRecords()
+         return " | ".join(records[0]) if records else ""
      ```
 
-     The binding errors — the class isn't on the gateway classpath yet.
-     (Perspective bindings run **on the gateway**, so it's the gateway's
-     classpath that counts, not the Designer's.)
+     The binding errors — `No module named csv`: the class isn't on the
+     gateway classpath yet. (Perspective bindings run **on the gateway**, so
+     it's the gateway's classpath that counts, not the Designer's.)
   2. **Fix local with a file volume.** The local gateway gets the JAR the way
      it gets everything else: a bind mount — a single-file one, exactly like
      the `services/modules.json` line already there. Add this to the
@@ -278,13 +283,13 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      `docker-compose.yaml`:
 
      ```yaml
-     - ./jar-files/jar/commons-lang3-3.19.0.jar:/usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar
+     - ./jar-files/jar/commons-csv-1.14.1.jar:/usr/local/bin/ignition/lib/core/gateway/commons-csv-1.14.1.jar
      ```
 
      Then `docker compose up -d` — the config change recreates the gateway.
      Library JARs load at **boot**, like modules. After the gateway is back,
-     type in the text field: the label shows the word reversed
-     (`Ignition` → `noitingI`).
+     type a CSV line in the text field: the label shows the parsed fields
+     (`pump,3,ok` → `pump | 3 | ok`).
   3. **Make it deployable state.** Test and production have no working tree
      to mount from — the pipeline ships the bytes. The step below is ready
      to copy: paste it into `deploy.yml` at the marked
@@ -328,14 +333,14 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      deploy.
   4. **Ship it.** PR with the view, the compose volume **and** the workflow
      change → merge → watch the run ship the JAR and restart test → open the
-     view on test (`http://localhost:8089`) and see the reverse work on a
+     view on test (`http://localhost:8089`) and see the CSV parse on a
      gateway you never touched. Note what step 2 did *not* give you: the
      bind mount only exists on a machine with your working tree — on a real
      server there is none, so the pipeline re-ships the JAR on every change,
      which is the point.
-  - **Gate:** typing in the text field shows the reversed word on **test**,
-    the JAR got there through the pipeline, and the run log shows a restart
-    on the JAR deploy but none on your next config-only deploy.
+  - **Gate:** typing a CSV line in the text field shows the parsed fields on
+    **test**, the JAR got there through the pipeline, and the run log shows a
+    restart on the JAR deploy but none on your next config-only deploy.
 
 ## Debrief
 

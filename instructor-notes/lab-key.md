@@ -271,18 +271,29 @@ for the full verified behaviour.)
 - S3: gitleaks job with `fetch-depth: 0` (the scanner needs history, not the
   tip).
 - S4: library JAR through the pipeline (ported from the lab 07 Stephan
-  challenge). `jar-files/jar/commons-lang3-3.19.0.jar` is committed;
-  student flow: (1) Text Field + Label, label bound to the field's
-  `props.text` with a script transform doing
-  `StringUtils.reverse(value or "")` → binding errors while the class is
-  missing (Perspective bindings evaluate on the GATEWAY, so it's the
-  gateway classpath that matters, not the Designer); (2) hand-fix local:
-  `docker cp` the JAR into `/usr/local/bin/ignition/lib/core/gateway/` +
-  `docker restart` (classpath is read at boot); (3) add the "Ship library
-  JARs" step to deploy.yml after the module step (md5-compare per JAR,
-  restart only when changed — full YAML is in exercises/lab.md) AND
-  `"jar-files/**"` in `push.paths`; (4) PR → merge → verify the reverse on
-  test. Gotchas: forgetting the paths entry means a JAR-only PR never
-  deploys; a hand-copied JAR survives `docker restart` but NOT a container
-  recreate (`compose up --force-recreate` / image bump) — that fragility is
-  the argument for the pipeline step.
+  challenge). `jar-files/jar/commons-csv-1.14.1.jar` is committed —
+  **commons-csv, NOT commons-lang3**: verified live 2026-07-22 that the
+  8.3.6 image bundles `commons-lang3-3.11.jar` AND `commons-text-1.10.0.jar`
+  (plus guava, commons-io/codec/collections4/math3/…) under
+  `lib/core/common/`, on the gateway scripting classpath. With the old
+  commons-lang3 JAR the "binding errors first" premise was FALSE — the
+  import resolved from the bundled 3.11 (proven via a temp WebDev endpoint:
+  CodeSource → `lib/core/common/commons-lang3-3.11.jar`). commons-csv is
+  not bundled: import genuinely fails (`No module named csv`) until the JAR
+  lands, then resolves from `lib/core/gateway/commons-csv-1.14.1.jar` —
+  both directions verified E2E, including the local file-volume mount
+  (single-file bind mount + `docker compose up -d`, JAR on classpath after
+  the boot).
+  Student flow: (1) Text Field + Label, label bound to the field's
+  `props.text` with a script transform doing `CSVFormat.DEFAULT.parse(...)`
+  → binding errors while the class is missing (Perspective bindings
+  evaluate on the GATEWAY, so it's the gateway classpath that matters, not
+  the Designer); (2) fix local with a single-file bind mount into
+  `/usr/local/bin/ignition/lib/core/gateway/` + `docker compose up -d`
+  (classpath is read at boot); (3) paste the ready-made "Ship library JARs"
+  step from exercises/lab.md at the marked S4 HERE comment in deploy.yml
+  (md5-compare per JAR, restart only when changed) AND `"jar-files/**"` in
+  `push.paths`; (4) PR → merge → verify the CSV parse on test. Gotchas:
+  forgetting the paths entry means a JAR-only PR never deploys; the local
+  bind mount only exists where the working tree does — test/production get
+  the bytes from the pipeline, which is the point.
