@@ -784,10 +784,8 @@ def transform(self, value, quality, timestamp):
     return StringUtils.reverse(value or <span class="cmd2">""</span>)
 
 <span class="cm"># step 2: docker-compose.yaml — gateway-local-development,
-#         under volumes:</span>
-- type: <span class="cmd2">bind</span>
-  source: <span class="cmd2">./jar-files/jar/commons-lang3-3.19.0.jar</span>
-  target: <span class="cmd2">/usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar</span>
+#         under volumes: (a file mount, like modules.json)</span>
+- <span class="cmd2">./jar-files/jar/commons-lang3-3.19.0.jar</span>:<span class="cmd2">/usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar</span>
 
 docker compose up -d   <span class="cm"># recreate → the JAR loads at boot</span>
 

@@ -272,14 +272,13 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      (Perspective bindings run **on the gateway**, so it's the gateway's
      classpath that counts, not the Designer's.)
   2. **Fix local with a file volume.** The local gateway gets the JAR the way
-     it gets everything else: a bind mount. Add this to the
+     it gets everything else: a bind mount — a single-file one, exactly like
+     the `services/modules.json` line already there. Add this to the
      `gateway-local-development` service's `volumes:` list in
      `docker-compose.yaml`:
 
      ```yaml
-     - type: bind
-       source: ./jar-files/jar/commons-lang3-3.19.0.jar
-       target: /usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar
+     - ./jar-files/jar/commons-lang3-3.19.0.jar:/usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar
      ```
 
      Then `docker compose up -d` — the config change recreates the gateway.
