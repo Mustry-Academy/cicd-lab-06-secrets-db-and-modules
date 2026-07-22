@@ -141,10 +141,17 @@ jobs:
             echo "No secret files materialized — skipping (nothing under secrets/*.txt)."
             exit 0
           fi
-          docker exec "$IGNITION_CONTAINER" mkdir -p /run/secrets
+          # The gateway runs as uid 2003, not root, and /run is root-owned:
+          # the directory must be created as root and handed to the gateway.
+          docker exec -u root "$IGNITION_CONTAINER" \
+            install -d -o 2003 -g 0 -m 750 /run/secrets
           for f in "${files[@]}"; do
             name="$(basename "$f" .txt)"
             docker cp "$f" "$IGNITION_CONTAINER:/run/secrets/$name"
+            # docker cp writes as root; the gateway (uid 2003) must be able
+            # to read the secret file.
+            docker exec -u root "$IGNITION_CONTAINER" \
+              sh -c "chown 2003:0 '/run/secrets/$name' && chmod 400 '/run/secrets/$name'"
             echo "  shipped /run/secrets/$name"
           done
 
