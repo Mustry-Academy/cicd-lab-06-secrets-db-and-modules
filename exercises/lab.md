@@ -169,7 +169,12 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 
 ### Part 2 — ship a schema change as a migration (±20 min)
 - **2A.** Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and** `.down.sql`; apply with `scripts/migrate.sh up`; read `schema_migrations` (version 2, not dirty); re-run to see idempotency. Note: golang-migrate will NOT stop you editing an applied migration — that discipline is a written rule (the production repo's `docs/MIGRATIONS.md`), not a tool feature.
-- **2B.** Add the migrate step to `deploy.yml` **before** the ship step (and
+- **2B.** Add the migrate step to `deploy.yml` exactly at the marked
+  `# Part 2B: add your "Migrate database" step HERE` comment — **above**
+  the `Prune working tree per .deployignore` step, which deletes `scripts/`
+  and `db-migration/` from the checkout, so a migrate step placed below it
+  fails with `./scripts/migrate.sh: No such file or directory`. Keep it
+  **before** the ship step (and
   not `continueOnError`), deriving the database from the deploy target —
   `$DEPLOY_TARGET` is already in the job's env, and a `target: production`
   promotion must migrate `ignition_production`, not test:
