@@ -20,6 +20,7 @@ instructor-notes/
 scripts/
 tests/
 third-party-modules/
+jar-files/
 db-init/
 db-migration/
 # Secret FILES never travel inside the config payload — the deploy workflow

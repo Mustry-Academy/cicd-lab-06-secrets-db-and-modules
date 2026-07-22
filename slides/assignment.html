@@ -732,12 +732,13 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="stage">Optional stretch</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">OPTIONAL</span><div><div class="title">Stretch: three ways to go deeper</div><div class="lead">Pick by appetite. Each one extends a different part of the hour.</div></div></div>
+    <div class="sechead"><span class="num warm">OPTIONAL</span><div><div class="title">Stretch: four ways to go deeper</div><div class="lead">Pick by appetite. Each one extends a different part of the hour.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx"><b>The internal secret provider, and where it breaks.</b> On your local gateway, create an <b>internal secret provider</b> and store <span class="inlinecode">REPORTING_PASSWORD</span> in it: the gateway encrypts the value and keeps the <b>ciphertext in its own config</b>. Point <span class="inlinecode">TimescaleDB_Reports</span> at it: locally it stays Valid. Now ship that config through the pipeline and check develop: <b>Faulted</b>, because the ciphertext only decrypts on the gateway that created it. Explore <span class="inlinecode">ignition-secrets-tool.sh</span> (shared root key + KEK under <span class="inlinecode">data/config/ignition/keys/</span>) as the escape hatch, then revert to the referenced secret and write down which trade-off you'd pick.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Expand-contract rename.</b> Rename a column with two migrations (<span class="inlinecode">0003</span> add + backfill, <span class="inlinecode">0004</span> drop) and a screen change in between, so no deploy ever breaks a live query.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Secret scanner in CI.</b> Add a <span class="inlinecode">gitleaks</span> job to <span class="inlinecode">ci.yml</span> (with <span class="inlinecode">fetch-depth: 0</span>: the scanner must see history, not the tip). Test it with a fake-key PR → red ❌ → close without merging.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship a library JAR through the pipeline and use it on a screen.</b> The second kind of JAR from the teaching, done for real: get <span class="inlinecode">jar-files/jar/commons-lang3-3.19.0.jar</span> onto the gateway classpath via <span class="inlinecode">deploy.yml</span>, and prove it with a text field whose label shows the typed word reversed. Full steps on the next slide.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># stretch 3: ci.yml secret-scan job</span>
@@ -758,7 +759,42 @@ secret-scan:
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch · optional</span></div>
 </section>
 
-<!-- 16 · DONE -->
+<!-- 16 · STRETCH 4 · LIBRARY JAR -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Optional stretch · 4</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">S4</span><div><div class="title">Ship the commons-lang3 library JAR and reverse a word on a screen</div><div class="lead">Library JARs go to <span class="inlinecode">lib/core/gateway/</span> and load at boot, like modules. Make the pipeline carry this one, then call it from a Perspective binding.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Prove the gap first.</b> In any lab project, add a view with a <b>Text Field</b> and a <b>Label</b> next to it. Bind the label's <span class="inlinecode">props.text</span> to the text field's <span class="inlinecode">props.text</span> and add the <b>script transform</b> on the right. The binding errors: the class isn't on the gateway classpath yet (Perspective bindings run <b>on the gateway</b>, so the gateway's classpath is the one that counts).</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fix local by hand, once</b> — <span class="inlinecode">docker cp</span> the JAR into <span class="inlinecode">lib/core/gateway/</span> and restart (boot-time load, like modules). Type in the field: the label shows <span class="inlinecode">noitingI</span>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Make it deployable state.</b> Add a <b>Ship library JARs</b> step to <span class="inlinecode">deploy.yml</span> right after the module step — same pattern: copy, compare, restart only when changed (full step in <span class="inlinecode">exercises/lab.md</span>). Add <span class="inlinecode">"jar-files/**"</span> to the <span class="inlinecode">push.paths</span> list too, or a JAR-only change never deploys.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship it.</b> PR with the view and the workflow change → merge → the run ships the JAR and restarts test → the reverse works at <span class="inlinecode">http://localhost:8089</span>, on a gateway you never touched. A hand-copied JAR dies with the container; the pipeline re-ships it on every change.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># step 1: the script transform on the label binding</span>
+def transform(self, value, quality, timestamp):
+    from org.apache.commons.lang3 import StringUtils
+    return StringUtils.reverse(value or <span class="cmd2">""</span>)
+
+<span class="cm"># step 2: fix local by hand, once</span>
+docker cp jar-files/jar/commons-lang3-3.19.0.jar \
+  lab06-gateway-local-development:<span class="cmd2">/usr/local/bin/ignition/lib/core/gateway/</span>
+docker restart lab06-gateway-local-development</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">✅ S4 gate</span>
+          <p>Typing in the text field shows the <b>reversed word on test</b>, the JAR got there <b>through the pipeline</b>, and the run log shows a restart on the JAR deploy but none on your next config-only deploy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 4 · the library JAR</span></div>
+</section>
+
+<!-- 17 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -785,7 +821,7 @@ secret-scan:
 </div>
 
 <div class="hud"><div class="bar" id="bar"></div></div>
-<div class="pager" id="pager">01 / 17</div>
+<div class="pager" id="pager">01 / 19</div>
 <div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
 
 <script>

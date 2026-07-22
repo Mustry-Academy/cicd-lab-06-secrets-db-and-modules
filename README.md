@@ -93,7 +93,9 @@ cicd-lab-06-secrets-db-and-modules/
 │   ├── config/                         ← gateway config; the two db-connections live under
 │   │                                      resources/{core,local-development,test,production}/ignition/database-connection/
 │   └── modules.json                    ← module enablement manifest (Part 3 adds the spare)
-└── third-party-modules/                ← bundled .modl binaries — incl. the spare one Part 3 deploys
+├── third-party-modules/                ← bundled .modl binaries — incl. the spare one Part 3 deploys
+└── jar-files/jar/                      ← library JARs for the gateway classpath (Stretch S4 ships
+                                           commons-lang3 through the pipeline)
 ```
 
 ## The two database connections (the warm-up's broken state)

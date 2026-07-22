@@ -1027,8 +1027,9 @@ ACCEPT_MODULE_CERTS:      <span class="cmd2">…, com.mussonindustrial.embr.char
         <div class="hd">Kind 2 · library JARs: on the gateway classpath</div>
         <ul>
           <li><span class="d"></span><span>Java libraries your gateway scripts call. Our image-based production repo ships <code>amqp-client</code> (RabbitMQ) and an SMB client, with their <b>pinned dependency JARs</b> alongside.</span></li>
-          <li><span class="d"></span><span>They live in <code>modules/jar/</code> in the repo, with a README that records <b>where each JAR came from</b> (the Maven Central command), and get copied to <code>lib/core/gateway/</code>.</span></li>
+          <li><span class="d"></span><span>They live in <code>modules/jar/</code> in the repo, with a README that records <b>where each JAR came from</b> (the Maven Central command), and get copied to <code>lib/core/gateway/</code>. Like modules, the classpath is read at <b>boot</b>: shipping a JAR means a restart.</span></li>
           <li><span class="d"></span><span><b>Pin the versions, commit the binaries.</b> The gateway has no package manager: your repo is the lockfile.</span></li>
+          <li><span class="d"></span><span>This lab's repo carries one: <code>jar-files/jar/commons-lang3-3.19.0.jar</code>. Once it is on the classpath, any gateway-scoped script (Perspective bindings run on the gateway) can call it: <span class="mono">from org.apache.commons.lang3 import StringUtils</span>, then <span class="mono">StringUtils.reverse("Ignition")</span>. Stretch S4 ships it through the pipeline and puts it on a screen.</span></li>
         </ul>
       </div>
     </div>

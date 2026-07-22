@@ -236,6 +236,85 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and develop faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?
 - **S2.** Expand-contract rename: `0003` add + backfill, screen switch, `0004` drop.
 - **S3.** Add a `gitleaks` job to `ci.yml` (`fetch-depth: 0` — the scanner must see history); test with a fake-key PR.
+- **S4.** Ship a **library JAR** through the pipeline and use it on a screen.
+  The teaching's second kind of JAR, done for real: `jar-files/jar/` carries
+  `commons-lang3-3.19.0.jar` (pinned, checksummed in its README), and your job
+  is to get it onto the gateway classpath (`lib/core/gateway/`) via the
+  pipeline, then prove it works from a Perspective screen.
+
+  1. **Prove the gap first.** In any lab project, add a view with a **Text
+     Field** and a **Label** next to it. Bind the label's `props.text` to the
+     text field's `props.text` (property binding) and add a **script
+     transform**:
+
+     ```python
+     def transform(self, value, quality, timestamp):
+         from org.apache.commons.lang3 import StringUtils
+         return StringUtils.reverse(value or "")
+     ```
+
+     The binding errors — the class isn't on the gateway classpath yet.
+     (Perspective bindings run **on the gateway**, so it's the gateway's
+     classpath that counts, not the Designer's.)
+  2. **Fix local by hand, once** — the same move the deploy step will automate:
+
+     ```bash
+     docker cp jar-files/jar/commons-lang3-3.19.0.jar \
+       lab06-gateway-local-development:/usr/local/bin/ignition/lib/core/gateway/
+     docker restart lab06-gateway-local-development
+     ```
+
+     Library JARs load at **boot**, like modules — hence the restart. After
+     the gateway is back, type in the text field: the label shows the word
+     reversed (`Ignition` → `noitingI`).
+  3. **Make it deployable state.** Add a **Ship library JARs** step to
+     `deploy.yml`, right after the module-manifest step (it is the same
+     pattern: copy, compare, restart only when changed):
+
+     ```yaml
+     - name: Ship library JARs (restart if changed)
+       run: |
+         set -euo pipefail
+         shopt -s nullglob
+         changed=false
+         for f in jar-files/jar/*.jar; do
+           name="$(basename "$f")"
+           before="$(docker exec "$IGNITION_CONTAINER" md5sum "/usr/local/bin/ignition/lib/core/gateway/$name" 2>/dev/null | cut -d' ' -f1 || true)"
+           if [ "$before" != "$(md5sum "$f" | cut -d' ' -f1)" ]; then
+             docker cp "$f" "$IGNITION_CONTAINER:/usr/local/bin/ignition/lib/core/gateway/$name"
+             echo "  shipped JAR $name"
+             changed=true
+           fi
+         done
+         if [ "$changed" = false ]; then
+           echo "Library JARs unchanged — no restart needed."
+           exit 0
+         fi
+         docker restart "$IGNITION_CONTAINER"
+         for _ in $(seq 1 60); do
+           if curl -fsS --max-time 3 "$IGNITION_URL/StatusPing" 2>/dev/null | grep -q RUNNING; then
+             echo "gateway RUNNING again."
+             exit 0
+           fi
+           sleep 5
+         done
+         echo "gateway did not come back after JAR restart" >&2
+         exit 1
+     ```
+
+     Also add `"jar-files/**"` to the `push.paths` list at the top of
+     `deploy.yml` — without it, a PR that only changes a JAR never triggers a
+     deploy.
+  4. **Ship it.** PR with the view **and** the workflow change → merge →
+     watch the run ship the JAR and restart test → open the view on test
+     (`http://localhost:8089`) and see the reverse work on a gateway you
+     never touched. Note what step 2 did *not* give you: a hand-copied JAR
+     dies with the container (`docker cp` survives a restart, not a
+     recreate) — the pipeline re-ships it on every change, which is the
+     point.
+  - **Gate:** typing in the text field shows the reversed word on **test**,
+    the JAR got there through the pipeline, and the run log shows a restart
+    on the JAR deploy but none on your next config-only deploy.
 
 ## Debrief
 

@@ -264,3 +264,19 @@ for the full verified behaviour.)
 - S2: expand-contract: 0003 add+backfill, screen switch, 0004 drop.
 - S3: gitleaks job with `fetch-depth: 0` (the scanner needs history, not the
   tip).
+- S4: library JAR through the pipeline (ported from the lab 07 Stephan
+  challenge). `jar-files/jar/commons-lang3-3.19.0.jar` is committed;
+  student flow: (1) Text Field + Label, label bound to the field's
+  `props.text` with a script transform doing
+  `StringUtils.reverse(value or "")` → binding errors while the class is
+  missing (Perspective bindings evaluate on the GATEWAY, so it's the
+  gateway classpath that matters, not the Designer); (2) hand-fix local:
+  `docker cp` the JAR into `/usr/local/bin/ignition/lib/core/gateway/` +
+  `docker restart` (classpath is read at boot); (3) add the "Ship library
+  JARs" step to deploy.yml after the module step (md5-compare per JAR,
+  restart only when changed — full YAML is in exercises/lab.md) AND
+  `"jar-files/**"` in `push.paths`; (4) PR → merge → verify the reverse on
+  test. Gotchas: forgetting the paths entry means a JAR-only PR never
+  deploys; a hand-copied JAR survives `docker restart` but NOT a container
+  recreate (`compose up --force-recreate` / image bump) — that fragility is
+  the argument for the pipeline step.
