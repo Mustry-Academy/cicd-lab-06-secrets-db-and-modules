@@ -46,7 +46,11 @@ scripts/validate.sh       # green before you start
 
 The warm-up, Parts 1C–1D and 2B need your fork with Actions enabled (same setup
 as Lab 04): the pipeline is what deploys, writes the secret files and runs the
-migrations.
+migrations. Also point `gh` at your fork once —
+`gh repo set-default <you>/cicd-lab-06-secrets-db-and-modules` — it's stored per
+clone, so your Lab 03/04 setting doesn't carry over. The warm-up's `gh secret set`
+commands (and any `gh pr create`) resolve against this default; without it they
+ask which repo you mean, or target the course repo.
 
 ---
 

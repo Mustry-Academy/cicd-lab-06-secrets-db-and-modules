@@ -266,7 +266,7 @@ body{
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Grab your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> — the runner needs it again here (make one at <span class="inlinecode">github.com/settings/tokens</span> if you skipped Lab 04).</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span>. Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>. Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span> so <span class="inlinecode">gh</span> targets <b>your fork</b> (per clone, same as Labs 03/04 — the warm-up's <span class="inlinecode">gh secret set</span> needs it). Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
@@ -285,8 +285,9 @@ cp .env.example .env
 <span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span>
 <span class="cm">#    RUNNER_GITHUB_PAT=<span class="cmd2">ghp_your_lab04_token</span></span>
 
-<span class="cm"># 5: origin → YOUR username? good. Then VS Code + the stack</span>
+<span class="cm"># 5: origin → YOUR username? good. Then make gh target YOUR fork</span>
 git remote -v
+gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-secrets-db-and-modules
 code .
 ./scripts/setup.sh          <span class="cm"># three gateways + TimescaleDB + runner</span></pre></div>
       </div>
