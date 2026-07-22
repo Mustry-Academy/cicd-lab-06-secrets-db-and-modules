@@ -24,9 +24,10 @@ on:
   push:
     tags: ['v*']
 
-concurrency:
-  group: deploy-lab-gateway-production
-  cancel-in-progress: false
+# No concurrency group here: deploy.yml (the called workflow) already
+# serializes on deploy-lab-gateway-production. Declaring the same group in
+# the caller deadlocks — the caller holds the group while waiting for the
+# callee to enter it, and GitHub cancels the run.
 
 permissions:
   contents: read
