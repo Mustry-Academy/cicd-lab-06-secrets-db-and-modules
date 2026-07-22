@@ -240,7 +240,7 @@ body{
       <div class="pcard">
         <div class="pn">PART 3 · SOLO · ±10 MIN</div>
         <h4>Deploy three third-party modules</h4>
-        <p>Add a <span class="inlinecode">.modl</span> with headless license and certificate acceptance in <span class="inlinecode">modules.json</span>, and ship it through the pipeline.</p>
+        <p>Accept three <span class="inlinecode">.modl</span> files headlessly in the compose env vars, add their <span class="inlinecode">modules.json</span> entries, and ship them through the pipeline.</p>
         <div class="gate">gate → all three modules show Running on test, hands-free</div>
       </div>
     </div>
@@ -515,21 +515,22 @@ TimescaleDB_Reports   <span class="cm">← core only → ignition_local_developm
         <div class="step"><div class="ix">8</div><div class="tx"><b>Release to production with a tag:</b> <span class="inlinecode">git tag v1.0.0 &amp;&amp; git push origin v1.0.0</span> — the Lab 04 routing: the <b>tag</b>, not the merge, ships to production. <span class="inlinecode">release.yml</span> fires and runs the <b>same</b> <span class="inlinecode">deploy.yml</span> with <span class="inlinecode">target: production</span> — including the steps you added. Verify production: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_production</span>.</div></div>
       </div>
       <div>
-        <div class="code"><pre>feature/fix-test-db-connections
-    │ push
+        <div class="code"><pre><span class="cm"># 1-2: branch, commit, push</span>
+git switch -c feature/fix-test-db-connections
+git add -A &amp;&amp; git commit -m <span class="cmd2">"fix: db connections via referenced secrets"</span>
+git push -u origin feature/fix-test-db-connections
     ▼
-PR → <span class="cmd2">ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
-    │ merge
-    ▼
-main → <span class="cmd2">deploy.yml</span>: secrets → ship → scan → verify <span class="grn">✅</span>
-    │
-    ▼
-develop gateway
-  TimescaleDB           <span class="grn">Valid</span>
-  TimescaleDB_Reports   <span class="grn">Valid</span> → ignition_test
-    │ git tag v1.0.0 → <span class="cmd2">release.yml</span> → same deploy.yml, target: production
-    ▼
-production gateway — both <span class="grn">Valid</span> → ignition_production</pre></div>
+<span class="cm"># 3: open the PR (or the github.com button)</span>
+gh pr create --fill
+    ▼  <span class="cmd2">ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
+<span class="cm"># 5: merge on github.com once the checks are green</span>
+    ▼  <span class="cmd2">deploy.yml</span>: secrets → ship → scan → verify <span class="grn">✅</span>
+<span class="cm"># 7: develop gateway — both <span class="grn">Valid</span>, Reports → ignition_test</span>
+
+<span class="cm"># 8: release to production — the tag ships, not the merge</span>
+git tag v1.0.0 &amp;&amp; git push origin v1.0.0
+    ▼  <span class="cmd2">release.yml</span> → same deploy.yml, target: production
+<span class="cm"># production gateway — both <span class="grn">Valid</span>, Reports → ignition_production</span></pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">✅ Part 1 gate</span>
           <p>Both connections <b>Valid on develop AND production, fixed by the pipeline and not by hand</b>, and you can narrate the full path: <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</p>
@@ -653,7 +654,7 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="title" style="color:#fff;max-width:26ch">Deploy three third-party modules through the pipeline</div>
     <p class="lead">The binary becomes deployable state: committed, license-accepted in config, shipped by the same run as everything else. The proof of success is a gateway that boots complete with <b style="color:#fff">no hands on it</b>.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Add a <span class="mono" style="color:#dbe4f0">.modl</span> from <span class="mono" style="color:#dbe4f0">third-party-modules/</span> with headless license/cert acceptance, and ship it.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Accept the three spare modules headlessly (compose env vars), add their <span class="mono" style="color:#dbe4f0">modules.json</span> entries, and ship them.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Verify it shows <b>Running</b> on develop without anyone clicking an install dialog, then run the negative test.</span></li>
     </ul>
   </div>
@@ -667,31 +668,33 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="stage">Part 3 · the module</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">3</span><div><div class="title">Add three third-party modules with headless license acceptance</div><div class="lead">The modules load from <span class="inlinecode">third-party-modules/</span>, and every license is accepted by config the gateway derives, not by a click.</div></div></div>
+    <div class="sechead"><span class="num">3</span><div><div class="title">Add three third-party modules with headless license acceptance</div><div class="lead">The <span class="inlinecode">.modl</span> files sit in <span class="inlinecode">third-party-modules/</span>, but nothing tells the gateway to load or trust them yet. You add both halves, and every license is accepted by config the gateway derives, not by a click.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>Three</b> modules in <span class="inlinecode">third-party-modules/</span> have no manifest entry, so the gateway never loads them: <b>Periscope</b>, <b>Charts</b> and the <b>TimescaleDB Historian</b>. All three are already in the compose <span class="inlinecode">GATEWAY_MODULES_ENABLED</span> / <span class="inlinecode">ACCEPT_MODULE_LICENSES</span> / <span class="inlinecode">ACCEPT_MODULE_CERTS</span> — that env acceptance is what lets the gateway derive the fingerprint headlessly.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx">Add all three to <span class="inlinecode">services/modules.json</span>, two lines each: <span class="inlinecode">"filename"</span> and <span class="inlinecode">"onStartup": "enabled"</span>. The module IDs are on the right — you can't guess those, so they're given. You do <b>not</b> type the fingerprint or hash: you don't know them yet.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx">Boot the local gateway once. It accepts the licenses from the env vars and <b>writes <span class="inlinecode">certFingerprint</span> + <span class="inlinecode">licenseAgreementHash</span> back into <span class="inlinecode">modules.json</span></b> for all three. <span class="inlinecode">git diff</span> shows exactly what it added — commit that.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx">Ship them through the pipeline (PR → merge → deploy run). Because the manifest changed, the deploy <b>restarts</b> the gateway: modules only load at boot. Verify on test at <span class="inlinecode">http://localhost:8089</span>: <i>Config → Modules</i> shows all three <b>Running</b>. Nobody clicked an install dialog.</div></div>
-        <div class="step"><div class="ix">5</div><div class="tx">Negative test on <b>one</b> of them: delete its two derived lines <b>and</b> drop it from the <span class="inlinecode">ACCEPT_MODULE_*</span> env vars, wipe the volume, boot — the gateway parks at commissioning (<span class="inlinecode">"details":"COMMISSIONING"</span>). Put both back.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx"><b>Look first.</b> Open <span class="inlinecode">http://localhost:8088</span> → <i>Config → Modules</i> (the platform-modules page): <b>Periscope</b>, <b>Charts</b> and the <b>TimescaleDB Historian</b> are not in the list, even though their <span class="inlinecode">.modl</span> files sit in <span class="inlinecode">third-party-modules/</span>. No manifest entry, no env acceptance → the gateway ignores them.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Accept them in the env vars:</b> in <span class="inlinecode">docker-compose.yaml</span>, add the three module IDs (given on the right — you can't guess those) to <b>all three lists</b>: <span class="inlinecode">GATEWAY_MODULES_ENABLED</span> (may load), <span class="inlinecode">ACCEPT_MODULE_LICENSES</span> and <span class="inlinecode">ACCEPT_MODULE_CERTS</span> (headless license + certificate acceptance).</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Add the manifest entries:</b> all three in <span class="inlinecode">services/modules.json</span>, two lines each: <span class="inlinecode">"filename"</span> and <span class="inlinecode">"onStartup": "enabled"</span>. You do <b>not</b> type the fingerprint or hash: you don't know them yet.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><span class="inlinecode">docker compose up -d</span> — the env change recreates the local gateway, and on that boot it accepts the licenses from the env vars and <b>writes <span class="inlinecode">certFingerprint</span> + <span class="inlinecode">licenseAgreementHash</span> back into <span class="inlinecode">modules.json</span></b> for all three. <span class="inlinecode">git diff</span> shows exactly what it added — commit that. The platform-modules page now shows all three <b>Running</b>.</div></div>
+        <div class="step"><div class="ix">5</div><div class="tx">Ship them through the pipeline (PR → merge → deploy run). Because the manifest changed, the deploy <b>restarts</b> the gateway: modules only load at boot. Verify on test at <span class="inlinecode">http://localhost:8089</span>: <i>Config → Modules</i> shows all three <b>Running</b>. Nobody clicked an install dialog.</div></div>
+        <div class="step"><div class="ix">6</div><div class="tx">Negative test on <b>one</b> of them: delete its two derived lines <b>and</b> drop it from the <span class="inlinecode">ACCEPT_MODULE_*</span> env vars, wipe the volume, boot — the gateway parks at commissioning (<span class="inlinecode">"details":"COMMISSIONING"</span>). Put both back.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># services/modules.json: all YOU write (3 entries)</span>
+        <div class="code"><pre><span class="cm"># 2: docker-compose.yaml — add the 3 ids to ALL THREE lists
+#    (GATEWAY_MODULES_ENABLED, ACCEPT_MODULE_LICENSES,
+#     ACCEPT_MODULE_CERTS):</span>
+    <span class="cmd2">com.mussonindustrial.embr.periscope</span>,
+    <span class="cmd2">com.mussonindustrial.embr.charts</span>,
+    <span class="cmd2">com.mustry.historian.timescaledb</span>
+
+<span class="cm"># 3: services/modules.json — per module, all YOU write:</span>
 "com.mussonindustrial.embr.periscope": {
   "filename": <span class="cmd2">"/third-party-modules/Embr-Periscope-Ignition83-0.12.0.modl"</span>,
   "onStartup": <span class="cmd2">"enabled"</span>
 },
-"com.mussonindustrial.embr.charts": {
-  "filename": <span class="cmd2">"/third-party-modules/Embr-Charts-Ignition83-4.0.1.modl"</span>,
-  "onStartup": <span class="cmd2">"enabled"</span>
-},
-"com.mustry.historian.timescaledb": {
-  "filename": <span class="cmd2">"/third-party-modules/TimescaleDB-Historian.modl"</span>,
-  "onStartup": <span class="cmd2">"enabled"</span>
-}
+<span class="cm"># same for …embr.charts   → Embr-Charts-Ignition83-4.0.1.modl
+# and …historian.timescaledb → TimescaleDB-Historian.modl</span>
 
-<span class="cm"># after one boot, the gateway appends to EACH:</span>
+<span class="cm"># 4: after one boot, the gateway appends to EACH:</span>
   <span class="cmd2">"certFingerprint": "e5a3cf3f…",</span>
   <span class="cmd2">"licenseAgreementHash": 101444854</span></pre></div>
         <div class="goal" style="margin-top:18px">
@@ -770,9 +773,9 @@ secret-scan:
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx"><b>Prove the gap first.</b> In any lab project, add a view with a <b>Text Field</b> and a <b>Label</b> next to it. Bind the label's <span class="inlinecode">props.text</span> to the text field's <span class="inlinecode">props.text</span> and add the <b>script transform</b> on the right. The binding errors: the class isn't on the gateway classpath yet (Perspective bindings run <b>on the gateway</b>, so the gateway's classpath is the one that counts).</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fix local by hand, once</b> — <span class="inlinecode">docker cp</span> the JAR into <span class="inlinecode">lib/core/gateway/</span> and restart (boot-time load, like modules). Type in the field: the label shows <span class="inlinecode">noitingI</span>.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Make it deployable state.</b> Add a <b>Ship library JARs</b> step to <span class="inlinecode">deploy.yml</span> right after the module step — same pattern: copy, compare, restart only when changed (full step in <span class="inlinecode">exercises/lab.md</span>). Add <span class="inlinecode">"jar-files/**"</span> to the <span class="inlinecode">push.paths</span> list too, or a JAR-only change never deploys.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship it.</b> PR with the view and the workflow change → merge → the run ships the JAR and restarts test → the reverse works at <span class="inlinecode">http://localhost:8089</span>, on a gateway you never touched. A hand-copied JAR dies with the container; the pipeline re-ships it on every change.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fix local with a file volume.</b> The local gateway gets the JAR the way it gets everything else: a bind mount. Add the volume on the right to the <span class="inlinecode">gateway-local-development</span> service in <span class="inlinecode">docker-compose.yaml</span>, then <span class="inlinecode">docker compose up -d</span> — library JARs load at <b>boot</b>, like modules. Type in the field: the label shows <span class="inlinecode">noitingI</span>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Make it deployable state.</b> Test and production have no working tree to mount from — the pipeline ships the bytes. The <b>Ship library JARs</b> step is written for you in <span class="inlinecode">exercises/lab.md</span> (same pattern as the module step: copy, compare, restart only when changed) — paste it at the marked <span class="inlinecode"># Stretch S4 … HERE</span> comment in <span class="inlinecode">deploy.yml</span>, right after the module step. Add <span class="inlinecode">"jar-files/**"</span> to the <span class="inlinecode">push.paths</span> list too, or a JAR-only change never deploys.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship it.</b> PR with the view, the compose volume and the workflow change → merge → the run ships the JAR and restarts test → the reverse works at <span class="inlinecode">http://localhost:8089</span>, on a gateway you never touched.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># step 1: the script transform on the label binding</span>
@@ -780,10 +783,17 @@ def transform(self, value, quality, timestamp):
     from org.apache.commons.lang3 import StringUtils
     return StringUtils.reverse(value or <span class="cmd2">""</span>)
 
-<span class="cm"># step 2: fix local by hand, once</span>
-docker cp jar-files/jar/commons-lang3-3.19.0.jar \
-  lab06-gateway-local-development:<span class="cmd2">/usr/local/bin/ignition/lib/core/gateway/</span>
-docker restart lab06-gateway-local-development</pre></div>
+<span class="cm"># step 2: docker-compose.yaml — gateway-local-development,
+#         under volumes:</span>
+- type: <span class="cmd2">bind</span>
+  source: <span class="cmd2">./jar-files/jar/commons-lang3-3.19.0.jar</span>
+  target: <span class="cmd2">/usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar</span>
+
+docker compose up -d   <span class="cm"># recreate → the JAR loads at boot</span>
+
+<span class="cm"># step 3: deploy.yml — the marked spot you paste into:</span>
+<span class="cm"># Stretch S4: paste the ready-made "Ship library JARs"
+#             step HERE — it is in exercises/lab.md</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">✅ S4 gate</span>
           <p>Typing in the text field shows the <b>reversed word on test</b>, the JAR got there <b>through the pipeline</b>, and the run log shows a restart on the JAR deploy but none on your next config-only deploy.</p>

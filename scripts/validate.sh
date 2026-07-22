@@ -6,7 +6,8 @@
 #   1. Every *.json under projects/ and services/ parses.
 #   2. .deployignore patterns are relative (no leading /).
 #   3. Secret scan: no real files under secrets/, no known secret values in
-#      the gateway payload (projects/ + services/), gitleaks if installed.
+#      the gateway payload (projects/ + services/). A full gitleaks history
+#      scan is the lab's stretch S3 — it runs in CI, not here.
 #   4. actionlint passes on .github/workflows/ (only if actionlint is installed).
 #
 # Exits non-zero if any check fails. No Ignition or Docker needed.
@@ -96,16 +97,6 @@ for ex in secrets/*.example; do
     ss_fail=1
   fi
 done
-
-# 3d. gitleaks, if installed (the lab's stretch goal wires it into CI too).
-if command -v gitleaks > /dev/null 2>&1; then
-  if ! gitleaks detect --source . --no-banner --redact > /dev/null 2>&1; then
-    echo -e "  ${RED}gitleaks found leaks${NC} — run 'gitleaks detect --source . --verbose --redact'"
-    ss_fail=1
-  fi
-else
-  echo -e "  ${YELLOW}gitleaks not installed${NC} — skipping history scan (install from https://github.com/gitleaks/gitleaks)"
-fi
 
 if [ "$ss_fail" -eq 0 ]; then
   echo -e "  ${GREEN}ok${NC} — no secrets where they shouldn't be"

@@ -149,9 +149,9 @@ https://docs.inductiveautomation.com/docs/8.3/platform/security/secrets-manageme
   secret; otherwise use referenced secrets so the question never comes up
 
 Enforcement: `scripts/validate.sh` runs a secret scan (tracked files under
-`secrets/`, known values in the gateway payload, plus **gitleaks** when
-installed), and `ci.yml` runs the same scan as a required PR check. Wiring a
-full gitleaks history scan into CI is stretch S3 of the lab.
+`secrets/`, known values in the gateway payload), and `ci.yml` runs the same
+scan as a required PR check. Wiring a full **gitleaks** history scan into CI
+is stretch S3 of the lab.
 
 ## 5. How this maps onto the lab's pipeline
 

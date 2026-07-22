@@ -195,9 +195,19 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 ### Part 3 — deploy three third-party modules (±10 min)
 - Install the three spare `.modl` files by adding **minimal** `services/modules.json` entries, let the gateway derive the acceptance fields, commit them, ship them through the pipeline, and verify they come up **Running** with no hands on the gateway.
 
-  The spare modules are **Embr Periscope**, **Embr Charts** and the **TimescaleDB Historian**. Their `.modl` files already sit in `third-party-modules/`, and all three module ids are already listed in the compose `GATEWAY_MODULES_ENABLED`, `ACCEPT_MODULE_LICENSES`, and `ACCEPT_MODULE_CERTS` env vars — but they ship **without a `modules.json` entry**, so the gateway does not load them. Nothing runs until you add the entries.
+  The spare modules are **Embr Periscope**, **Embr Charts** and the **TimescaleDB Historian**. Their `.modl` files already sit in `third-party-modules/` — and that is *all* that ships: no `modules.json` entry, and their ids are absent from the compose module env vars. The gateway neither loads nor trusts them.
 
-  **Step 1 — add the lines you actually know.** You do *not* know the fingerprints or the license hashes, and you shouldn't guess. The module ids are hard to discover, so they are given here. Add only:
+  **Step 1 — look first.** Open `http://localhost:8088` → *Config → Modules* (the platform-modules page): none of the three is in the list. A `.modl` on disk does nothing on its own.
+
+  **Step 2 — accept them in the env vars.** In `docker-compose.yaml`, add the three module ids to **all three** lists in the shared env anchor: `GATEWAY_MODULES_ENABLED` (the gateway may load them), plus `ACCEPT_MODULE_LICENSES` and `ACCEPT_MODULE_CERTS` (headless license + certificate acceptance). The ids are hard to discover, so they are given:
+
+  ```
+  com.mussonindustrial.embr.periscope
+  com.mussonindustrial.embr.charts
+  com.mustry.historian.timescaledb
+  ```
+
+  **Step 3 — add the manifest lines you actually know.** You do *not* know the fingerprints or the license hashes, and you shouldn't guess. Add only:
 
   ```json
   "com.mussonindustrial.embr.periscope": {
@@ -214,16 +224,16 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   }
   ```
 
-  **Step 2 — boot once and let the gateway fill in the rest.** Restart the local gateway (`docker restart lab06-gateway-local-development`, or re-run `scripts/setup.sh`). Because acceptance is already in the env vars, the gateway installs the modules headlessly and **rewrites `modules.json`**, appending to each entry the two fields it computed:
+  **Step 4 — boot once and let the gateway fill in the rest.** `docker compose up -d` — the env change recreates the local gateway. On that boot it accepts the licenses from the env vars, installs the modules headlessly and **rewrites `modules.json`**, appending to each entry the two fields it computed:
 
   ```json
     "certFingerprint": "e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2",
     "licenseAgreementHash": 101444854
   ```
 
-  `git diff services/modules.json` shows exactly what it added. **Commit those lines.** They are the whole point: with acceptance stored as data, a *fresh* gateway (an image-based deploy, a rebuilt container) installs the modules without a human ever clicking an install dialog — and without needing the env vars at all.
+  `git diff services/modules.json` shows exactly what it added. **Commit those lines** (together with your `docker-compose.yaml` edit). They are the whole point: with acceptance stored as data, a *fresh* gateway (an image-based deploy, a rebuilt container) installs the modules without a human ever clicking an install dialog — and without needing the env vars at all.
 
-  **Step 3 — verify they are actually Running:**
+  **Step 5 — verify they are actually Running:**
 
   ```bash
   # the gateway logged them starting up:
@@ -232,7 +242,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 
   A `Starting up module` line = installed and Running. In the UI it is *Config → Modules*: all three listed, all Running.
 
-  **Step 4 — ship them.** PR → merge → deploy run. Because the module manifest changed, the deploy **restarts** the gateway: modules only load at boot, unlike projects and config, which reload hot.
+  **Step 6 — ship them.** PR → merge → deploy run. Because the module manifest changed, the deploy **restarts** the gateway: modules only load at boot, unlike projects and config, which reload hot.
 
   **Negative test (what un-accepted looks like), on one module:** in a scratch checkout, delete its two derived lines **and** drop `com.mussonindustrial.embr.periscope` from `ACCEPT_MODULE_LICENSES` / `ACCEPT_MODULE_CERTS`, wipe the local volume, and boot. With the module enabled but unaccepted the gateway parks at the commissioning screen — `curl http://localhost:8088/StatusPing` returns `{"state":"RUNNING","details":"COMMISSIONING"}`. Put both back to recover.
 - **Gate:** all three modules Running on test, hands-free — *Config → Modules* shows all three Running.
@@ -261,20 +271,27 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      The binding errors — the class isn't on the gateway classpath yet.
      (Perspective bindings run **on the gateway**, so it's the gateway's
      classpath that counts, not the Designer's.)
-  2. **Fix local by hand, once** — the same move the deploy step will automate:
+  2. **Fix local with a file volume.** The local gateway gets the JAR the way
+     it gets everything else: a bind mount. Add this to the
+     `gateway-local-development` service's `volumes:` list in
+     `docker-compose.yaml`:
 
-     ```bash
-     docker cp jar-files/jar/commons-lang3-3.19.0.jar \
-       lab06-gateway-local-development:/usr/local/bin/ignition/lib/core/gateway/
-     docker restart lab06-gateway-local-development
+     ```yaml
+     - type: bind
+       source: ./jar-files/jar/commons-lang3-3.19.0.jar
+       target: /usr/local/bin/ignition/lib/core/gateway/commons-lang3-3.19.0.jar
      ```
 
-     Library JARs load at **boot**, like modules — hence the restart. After
-     the gateway is back, type in the text field: the label shows the word
-     reversed (`Ignition` → `noitingI`).
-  3. **Make it deployable state.** Add a **Ship library JARs** step to
-     `deploy.yml`, right after the module-manifest step (it is the same
-     pattern: copy, compare, restart only when changed):
+     Then `docker compose up -d` — the config change recreates the gateway.
+     Library JARs load at **boot**, like modules. After the gateway is back,
+     type in the text field: the label shows the word reversed
+     (`Ignition` → `noitingI`).
+  3. **Make it deployable state.** Test and production have no working tree
+     to mount from — the pipeline ships the bytes. The step below is ready
+     to copy: paste it into `deploy.yml` at the marked
+     `# Stretch S4: paste the ready-made "Ship library JARs" step HERE`
+     comment, right after the module-manifest step (it is the same pattern:
+     copy, compare, restart only when changed):
 
      ```yaml
      - name: Ship library JARs (restart if changed)
@@ -310,13 +327,13 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      Also add `"jar-files/**"` to the `push.paths` list at the top of
      `deploy.yml` — without it, a PR that only changes a JAR never triggers a
      deploy.
-  4. **Ship it.** PR with the view **and** the workflow change → merge →
-     watch the run ship the JAR and restart test → open the view on test
-     (`http://localhost:8089`) and see the reverse work on a gateway you
-     never touched. Note what step 2 did *not* give you: a hand-copied JAR
-     dies with the container (`docker cp` survives a restart, not a
-     recreate) — the pipeline re-ships it on every change, which is the
-     point.
+  4. **Ship it.** PR with the view, the compose volume **and** the workflow
+     change → merge → watch the run ship the JAR and restart test → open the
+     view on test (`http://localhost:8089`) and see the reverse work on a
+     gateway you never touched. Note what step 2 did *not* give you: the
+     bind mount only exists on a machine with your working tree — on a real
+     server there is none, so the pipeline re-ships the JAR on every change,
+     which is the point.
   - **Gate:** typing in the text field shows the reversed word on **test**,
     the JAR got there through the pipeline, and the run log shows a restart
     on the JAR deploy but none on your next config-only deploy.

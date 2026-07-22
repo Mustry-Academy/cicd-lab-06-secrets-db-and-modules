@@ -380,7 +380,7 @@ git log -p | grep ak_live
         </div>
         <div class="callout reveal" data-step="4">
           <div class="lab" style="color:var(--blue)">Prevention beats response</div>
-          <p>Secret scanners (e.g. <b>gitleaks</b>) in <code>scripts/validate.sh</code> and CI catch the Monday-09:14 commit <b>before</b> it's pushed. You'll wire this in the assignment.<!-- TODO(infra): gitleaks not yet wired into validate.sh/ci.yml --></p>
+          <p>Secret scanners catch the Monday-09:14 commit <b>before</b> it lands: <code>scripts/validate.sh</code> scans the payload for known secret values locally, and a history scanner like <b>gitleaks</b> runs in CI — wiring that CI job is a stretch goal in the assignment.</p>
         </div>
       </div>
     </div>
@@ -711,7 +711,7 @@ jobs:
       <div>
         <div class="callout" style="margin-top:0">
           <div class="lab" style="color:var(--blue)">Enforcement, not vigilance</div>
-          <p>Humans forget; hooks and CI don't. This repo's <code>scripts/validate.sh</code> runs a <b>secret scan</b> (gitleaks) and <code>ci.yml</code> repeats it on every PR: a leaked key fails the build before a reviewer ever sees it.<!-- TODO(infra): gitleaks wiring pending --></p>
+          <p>Humans forget; hooks and CI don't. This repo's <code>scripts/validate.sh</code> runs a <b>secret scan</b> (tracked files under <span class="mono">secrets/</span>, known values in the payload) and <code>ci.yml</code> repeats it on every PR: a leaked key fails the build before a reviewer ever sees it. A full <b>gitleaks</b> history scan is the assignment's stretch S3, in CI.</p>
         </div>
         <div class="code" style="margin-top:14px"><pre><span class="cm"># .gitignore: the relevant lines</span>
 .env
@@ -719,8 +719,8 @@ secrets/*
 !secrets/*.example
 *.gwbk
 
-<span class="cm"># validate.sh (excerpt)</span>
-gitleaks detect --source . <span class="cm"># zero findings = green</span></pre></div>
+<span class="cm"># validate.sh — the secret scan</span>
+./scripts/validate.sh <span class="cm"># no secrets where they shouldn't be = green</span></pre></div>
       </div>
     </div>
   </div>

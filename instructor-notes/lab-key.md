@@ -103,12 +103,18 @@ student never types the fingerprint/hash: the gateway computes them.
   the file gains the two computed fields. Verified values: charts
   `e5a3cf3f06627c175b68b0122ac8f2c3f9c992e2` / `3266212556`; periscope same
   cert fingerprint / `101444854`. This is the derivation students commit.
-- **Seed state for the spare (Periscope): in all three env vars, but ABSENT
-  from `services/modules.json`.** So on a fresh boot the gateway comes up clean
-  and RUNNING with periscope *not* loaded (`/res/embr-periscope/` → 404). Part 3
-  is a single-file edit: add the minimal manifest entry → boot → gateway derives
-  and writes the two fields → commit. (Charts stays fully specified + enabled in
-  the seed as the worked teaching example on slide 15.)
+- **Seed state for the three spares (Periscope, Charts, TimescaleDB
+  Historian), since 2026-07-22: ABSENT from `services/modules.json` AND from
+  all three module env vars in the compose anchor.** On a fresh boot the
+  gateway comes up clean and RUNNING with none of them loaded
+  (`/res/embr-periscope/` → 404), and the platform-modules page does not
+  list them — that observation is now the assignment's step 1. Part 3 is a
+  two-file edit: add the three ids to `GATEWAY_MODULES_ENABLED` +
+  `ACCEPT_MODULE_LICENSES` + `ACCEPT_MODULE_CERTS` (the shared anchor, so
+  `docker compose up -d` recreates ALL gateways with the new env — which is
+  also why the later deploy-restart of test works), add the minimal manifest
+  entries → boot → gateway derives and writes the two fields → commit both
+  files.
 - **`GATEWAY_MODULES_ENABLED` force-*enables* a listed module even when the
   manifest says `onStartup: "disabled"`** — the env list wins. That's why the
   spare is kept OUT of the seed manifest entirely rather than shipped
