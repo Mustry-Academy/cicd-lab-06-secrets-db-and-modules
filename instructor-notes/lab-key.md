@@ -3,11 +3,11 @@
 Two sections: what MUST be verified/re-seeded on a live stack before the
 course runs, and the answer key for the parts.
 
-## A. Seeding mechanics (verified live on 8.3.6) & what's left to check
+## A. Seeding mechanics (verified live on 8.3.8) & what's left to check
 
 ### A1. How the warm-up's broken state works — VERIFIED
 
-Empirical findings from a live run (2026-07-13, Ignition 8.3.6):
+Empirical findings from a live run (2026-07-13, Ignition 8.3.6; JAR bundling re-verified identical on 8.3.8 on 2026-07-24):
 
 - **The default embedded-secrets key is identical on every Ignition
   installation.** A ciphertext created on one default-key gateway decrypts on
@@ -86,7 +86,7 @@ from that branch with `target=test`.
 ### Part 3)
 
 **Part 3 design (env-var derivation) — reverified live 2026-07-14 on a fresh
-volume, local gateway, Ignition 8.3.6.** The whole point of Part 3 is that the
+volume, local gateway, Ignition 8.3.8.** The whole point of Part 3 is that the
 student never types the fingerprint/hash: the gateway computes them.
 
 - **A `.modl` in the external-modules folder is NOT auto-installed on its own.**
@@ -273,7 +273,7 @@ for the full verified behaviour.)
 - S4: library JAR through the pipeline (ported from the lab 07 Stephan
   challenge). `jar-files/jar/commons-csv-1.14.1.jar` is committed —
   **commons-csv, NOT commons-lang3**: verified live 2026-07-22 that the
-  8.3.6 image bundles `commons-lang3-3.11.jar` AND `commons-text-1.10.0.jar`
+  8.3.8 image bundles `commons-lang3-3.11.jar` AND `commons-text-1.10.0.jar`
   (plus guava, commons-io/codec/collections4/math3/…) under
   `lib/core/common/`, on the gateway scripting classpath. With the old
   commons-lang3 JAR the "binding errors first" premise was FALSE — the

@@ -79,7 +79,7 @@ needs to store secret values inline. Two flavours matter for CI/CD:
   - **Default keys (out of the box):** fresh Ignition installations ship with
     a *default encryption key that is the same on every installation*. A
     committed embedded ciphertext therefore decrypts on ANY fresh gateway —
-    it isn't protection at all, just obfuscation. (Verified on 8.3.6: a
+    it isn't protection at all, just obfuscation. (Verified on 8.3.8: a
     ciphertext created on one gateway decrypts cleanly on a brand-new
     container.)
   - **Custom keys (`ignition-secrets-tool.sh`):** once a gateway runs its own

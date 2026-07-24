@@ -16,7 +16,7 @@ references throughout.
 <!-- Infra status: the scaffolding (compose stack, secrets/ dir, db-migration/
      + scripts/migrate.sh, spare .modl, ci.yml secret scan, deploy.yml skeleton
      with the 1C/2B insertion points marked) is built, and the seeded broken
-     state is verified live on 8.3.6 (local Valid, test Faulted on "Unable to
+     state is verified live on 8.3.8 (local Valid, test Faulted on "Unable to
      decrypt ciphertext"; migrate.sh up/down/version green). Still open before
      the course: the fork-side pipeline runs — see instructor-notes/lab-key.md
      §A2. -->

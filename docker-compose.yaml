@@ -51,7 +51,8 @@ x-ignition-env: &ignition-env
     com.inductiveautomation.opcua.drivers.tcpudp,
     com.inductiveautomation.webdev,
     com.inductiveautomation.jdbc.postgresql,
-    com.cirruslink.mqtt.engine.gateway
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
   # Embr-Periscope, Embr-Charts and the TimescaleDB Historian are the three
   # spare modules Part 3 installs. Their .modl files sit in
   # third-party-modules/, but they ship with NO services/modules.json entry
@@ -67,9 +68,11 @@ x-ignition-env: &ignition-env
   # it is a 55 MB module and slow to boot, so it is not part of the
   # exercise.)
   ACCEPT_MODULE_LICENSES: >-
-    com.cirruslink.mqtt.engine.gateway
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
   ACCEPT_MODULE_CERTS: >-
-    com.cirruslink.mqtt.engine.gateway
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
   GATEWAY_RESTORE_DISABLED: "true"
   GATEWAY_NETWORK_ENABLED: "true"
   TZ: "Europe/Brussels"
@@ -97,7 +100,7 @@ x-ignition-healthcheck: &ignition-healthcheck
 services:
   # --- local gateway: edits on the host show up here immediately --------------
   gateway-local-development:
-    image: inductiveautomation/ignition:8.3.6
+    image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-local-development
     hostname: lab06-gateway-local-development
     # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
@@ -151,7 +154,7 @@ services:
 
   # --- test gateway: populated by deploy.yml (push to main) -------------------
   gateway-test:
-    image: inductiveautomation/ignition:8.3.6
+    image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-test
     hostname: lab06-gateway-test
     # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
@@ -206,7 +209,7 @@ services:
 
   # --- production gateway: populated by deploy.yml (dispatch, target=production) ------------------
   gateway-production:
-    image: inductiveautomation/ignition:8.3.6
+    image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-production
     hostname: lab06-gateway-production
     # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
