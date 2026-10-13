@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **This repository has moved and is read-only.** The CI/CD for Ignition course now lives in one repo: [Mustry-Academy/cicd-for-ignition](https://github.com/Mustry-Academy/cicd-for-ignition), in [`labs/06-secrets-db-and-modules/`](https://github.com/Mustry-Academy/cicd-for-ignition/tree/main/labs/06-secrets-db-and-modules). This repo will be deleted after 14 December 2026.
+
 # Lab 06 — Secrets, database migrations, modules & JARs
 
 Day 4 (morning) of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
